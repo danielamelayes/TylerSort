@@ -363,7 +363,7 @@ int main(int argc, char* argv[])
                             !std::isnan(cc_cht_val[ch]))
                         {
                             // std::cout << "Channel: " << ch << ", ";
-                            double energy = cc_E_cal[ch](cc_E_gmp[ch](cc_amp_val[ch]));
+                            double energy = cc_E_cal[ch](cc_E_gmp[ch](cc_amp_val[ch])); // Gain-match, then calibrate
                             double cht = cc_cht_val[ch] * CAHistograms::kNsPerBin;
                             cc_xtE->Fill(energy, ch);
                             cc_cht->Fill(cht, ch);
@@ -378,7 +378,7 @@ int main(int argc, char* argv[])
                             !std::isnan(cb_cht_val[ch]))
                         {
                             // std::cout << "Channel: " << ch << ", ";
-                            double energy = cb_E_cal[ch](cb_E_gmp[ch](cb_amp_val[ch]));
+                            double energy = cb_E_cal[ch](cb_E_gmp[ch](cb_amp_val[ch])); // Gain-match, then calibrate
                             double cht = cb_cht_val[ch] * CAHistograms::kNsPerBin;
                             cb_xtE->Fill(energy, ch);
                             cb_cht->Fill(cht, ch);
@@ -400,8 +400,7 @@ int main(int argc, char* argv[])
                 #if PROCESS_CLOVER_BACK
                     if (!cb_xtal_E.empty())
                     {
-                        cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T),
-                            det);
+                        cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
                         cb_abM->Fill(cb_xtal_E.size(), det);
                     }
                 #endif // PROCESS_CLOVER_BACK
