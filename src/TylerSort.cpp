@@ -393,8 +393,7 @@ int main(int argc, char* argv[])
                 #if PROCESS_CLOVER_CROSS
                     if (!cc_xtal_E.empty())
                     {
-                        cc_abE->Fill(CAAddBack::GetAddBackEnergy(cc_xtal_E, cc_xtal_T),
-                            det);
+                        cc_abE->Fill(CAAddBack::GetAddBackEnergy(cc_xtal_E, cc_xtal_T), det);
                         cc_abM->Fill(cc_xtal_E.size(), det);
                     }
                 #endif // PROCESS_CLOVER_CROSS

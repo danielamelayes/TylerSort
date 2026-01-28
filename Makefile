@@ -41,6 +41,6 @@ clean:
 
 # A quick test target
 test: $(TARGET)
-	$(TARGET) ~/TUNL/Data/NRF/70Ge/energy_calibration/calibrations ../../example_data ../../example_data 196 out.030.root
+	$(TARGET) ~/TUNL/Data/NRF/70Ge/energy_calibration/calibrations ../../example_data ../../example_data 196 out.196.root
 
 .PHONY: all clean debug
