@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
 
     // Gain match functions
     std::vector<std::function<double(double)>> cc_E_gmp, cb_E_gmp, ps_E_gmp, ce_T_gmp;
-    auto gain_shift_data = CAGainCorrection::GetGainCorrection(gain_shift_dir, run_number_int);
+    auto gain_shift_data = CAGainCorrection::MakeCorrection(gain_shift_dir, run_number_int);
 
     // Calibraration functions
     std::vector<std::function<double(double)>> cc_E_cal, cb_E_cal, ps_E_cal, ce_E_cal;
