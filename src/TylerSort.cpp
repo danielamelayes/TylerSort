@@ -156,7 +156,10 @@ int main(int argc, char* argv[])
 
     // Gain match functions
     std::vector<std::function<double(double)>> cc_E_gmp, cb_E_gmp, ps_E_gmp, ce_T_gmp;
-    auto gain_shift_data = CAGainCorrection::MakeCorrection(gain_shift_dir, run_number_int);
+    auto gain_shift_data = CAGainCorrection::MakeCorrections(gain_shift_dir, run_number_int);
+
+    // Cross-talk Correction Functions
+    std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> cc_xtalk_corr, cb_xtalk_corr;
 
     // Calibraration functions
     std::vector<std::function<double(double)>> cc_E_cal, cb_E_cal, ps_E_cal, ce_E_cal;
@@ -349,8 +352,8 @@ int main(int argc, char* argv[])
                 // Detector Loop
                 for (size_t det = 0; det < 4; det++)
                 {
-                    std::vector<double> cc_xtal_E, cb_xtal_E;
-                    std::vector<double> cc_xtal_T, cb_xtal_T;
+                    std::array<double, 4> cc_xtal_E, cb_xtal_E;
+                    std::array<double, 4> cc_xtal_T, cb_xtal_T;
 
                     // Crystal Loop
                     for (size_t xtal = 0; xtal < 4; xtal++)
@@ -381,8 +384,8 @@ int main(int argc, char* argv[])
                             cc_xtE->Fill(energy, ch);
                             cc_cht->Fill(cht, ch);
                             cc_sum->Fill(energy, det); // ch / 4 is the detector number
-                            cc_xtal_E.push_back(energy);
-                            cc_xtal_T.push_back(cht);
+                            cc_xtal_E[xtal] = energy;
+                            cc_xtal_T[xtal] = cht;
                         }
                         #endif // PROCESS_CLOVER_CROSS
 
@@ -396,8 +399,8 @@ int main(int argc, char* argv[])
                             cb_xtE->Fill(energy, ch);
                             cb_cht->Fill(cht, ch);
                             cb_sum->Fill(energy, det); // ch / 4 is the detector number
-                            cb_xtal_E.push_back(energy);
-                            cb_xtal_T.push_back(cht);
+                            cb_xtal_E[xtal] = energy;
+                            cb_xtal_T[xtal] = cht;
                         }
                         #endif // PROCESS_CLOVER_BACK
                     }
@@ -407,14 +410,14 @@ int main(int argc, char* argv[])
                     if (!cc_xtal_E.empty())
                     {
                         cc_abE->Fill(CAAddBack::GetAddBackEnergy(cc_xtal_E, cc_xtal_T), det);
-                        cc_abM->Fill(cc_xtal_E.size(), det);
+                        cc_abM->Fill(std::count_if(cc_xtal_E.begin(), cc_xtal_E.end(), [](double e) { return e != 0; }), det);
                     }
                     #endif // PROCESS_CLOVER_CROSS
                     #if PROCESS_CLOVER_BACK
                     if (!cb_xtal_E.empty())
                     {
                         cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
-                        cb_abM->Fill(cb_xtal_E.size(), det);
+                        cb_abM->Fill(std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e) { return e != 0; }), det);
                     }
                     #endif // PROCESS_CLOVER_BACK
                 }
