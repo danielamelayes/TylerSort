@@ -161,6 +161,7 @@ int main(int argc, char* argv[])
     // Cross-talk Correction Functions
     std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> cc_xtalk_corr, cb_xtalk_corr;
 
+
     // Calibraration functions
     std::vector<std::function<double(double)>> cc_E_cal, cb_E_cal, ps_E_cal, ce_E_cal;
 
@@ -417,7 +418,7 @@ int main(int argc, char* argv[])
                     if (!cb_xtal_E.empty())
                     {
                         cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
-                        cb_abM->Fill(std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e) { return e == e; }), det); // Count non-NaN entries for multiplicity
+                        cb_abM->Fill(std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e) { return !std::isnan(e); }), det); // Count non-NaN entries for multiplicity
                     }
                     #endif // PROCESS_CLOVER_BACK
                 }
