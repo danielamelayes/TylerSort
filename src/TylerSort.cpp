@@ -352,8 +352,8 @@ int main(int argc, char* argv[])
                 // Detector Loop
                 for (size_t det = 0; det < 4; det++)
                 {
-                    std::array<double, 4> cc_xtal_E, cb_xtal_E;
-                    std::array<double, 4> cc_xtal_T, cb_xtal_T;
+                    std::array<double, 4> cc_xtal_E = { NAN, NAN, NAN, NAN }, cb_xtal_E = { NAN, NAN, NAN, NAN };
+                    std::array<double, 4> cc_xtal_T = { NAN, NAN, NAN, NAN }, cb_xtal_T = { NAN, NAN, NAN, NAN };
 
                     // Crystal Loop
                     for (size_t xtal = 0; xtal < 4; xtal++)
@@ -417,7 +417,7 @@ int main(int argc, char* argv[])
                     if (!cb_xtal_E.empty())
                     {
                         cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
-                        cb_abM->Fill(std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e) { return e != 0; }), det);
+                        cb_abM->Fill(std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e) { return e == e; }), det); // Count non-NaN entries for multiplicity
                     }
                     #endif // PROCESS_CLOVER_BACK
                 }
