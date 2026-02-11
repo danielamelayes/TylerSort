@@ -117,10 +117,8 @@ int main(int argc, char* argv[])
     std::cout << "=============== Welcome to TylerSort! ==================" << std::endl;
     CAUtilities::PrintConfiguration(args);
 
-    // Enable ROOT multithreading
-    ROOT::EnableImplicitMT(kMaxThreads);
-    ROOT::EnableThreadSafety();
-    printf("[INFO] Enabled ROOT multithreading with %d/%d threads\n", kMaxThreads, ROOT::GetThreadPoolSize());
+    // ROOT multithreading is initialized in CAConfiguration.hpp static initializer
+    printf("[INFO] ROOT multithreading enabled with %d threads\n", ROOT::GetThreadPoolSize());
 
     /* #endregion Configuration Setup */
 
@@ -215,6 +213,10 @@ int main(int argc, char* argv[])
     std::thread progressBarThread(CAUtilities::DisplayProgressBar, std::ref(processedEntries), n_entries);
 
     printf("[INFO] Processing events...\n");
+
+    // Limit max tasks to reduce TBB work-stealing related race conditions
+    // This ensures better alignment between TBB tasks and ROOT's TThreadedObject slots
+    ROOT::TTreeProcessorMT::SetTasksPerWorkerHint(1);
 
     // Create a TTreeReader to read the TTree
     ROOT::TTreeProcessorMT EventProcessor(args.runFileName.c_str(), "clover");
