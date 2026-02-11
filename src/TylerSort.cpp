@@ -112,32 +112,15 @@ int main(int argc, char* argv[])
 {
     /* #region Configuration Setup */
 
-    if (argc != 6)
-    {
-        std::cerr << "Usage: " << argv[0] << " <calibration directory> <gain shift directory> <run file directory> <run number> <output filename>" << std::endl;
-        return 1;
-    }
+    auto args = CAUtilities::ParseArguments(argc, argv);
 
-    const std::string calibration_dir = argv[1];
-    const std::string gain_shift_dir = argv[2];
-    const std::string run_file_dir = argv[3];
-    const unsigned int run_number_int = std::stoi(argv[4]);
-    const std::string run_number = Form("%03d", run_number_int);
-    const std::string run_file_name = Form(RUN_FILE_NAME_TEMPLATE, run_number.c_str());
-    const std::string input_filename = Form("%s/%s", run_file_dir.c_str(), run_file_name.c_str());
-    const std::string output_filename = argv[5];
-
-    std::cout << "=============== Welcome to XTalkSort! ==================" << std::endl;
-    std::cout << "--------------- Current Configuration ------------------" << std::endl;
-    std::cout << "Calibration directory: " << calibration_dir << std::endl;
-    std::cout << "Gain-shift directory: " << gain_shift_dir << std::endl;
-    std::cout << "Input file: " << input_filename << std::endl;
-    std::cout << "Max Threads: " << kMaxThreads << std::endl;
-    std::cout << "--------------------------------------------------------" << std::endl;
+    std::cout << "=============== Welcome to TylerSort! ==================" << std::endl;
+    CAUtilities::PrintConfiguration(args);
 
     // Enable ROOT multithreading
     ROOT::EnableImplicitMT(kMaxThreads);
     ROOT::EnableThreadSafety();
+    printf("[INFO] Enabled ROOT multithreading with %d/%d threads\n", kMaxThreads, ROOT::GetThreadPoolSize());
 
     /* #endregion Configuration Setup */
 
@@ -145,7 +128,7 @@ int main(int argc, char* argv[])
 
     // Gain match functions
     std::vector<std::function<double(double)>> cc_E_gmp, cb_E_gmp, ps_E_gmp, ce_T_gmp;
-    auto gain_shift_data = CAGainCorrection::MakeCorrections(gain_shift_dir, run_number_int);
+    auto gain_shift_data = CAGainCorrection::MakeCorrections(args.gainShiftDir, args.runNumber);
 
     // Cross-talk Correction Functions
     std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> cc_xtalk_corr, cb_xtalk_corr;
@@ -159,7 +142,7 @@ int main(int argc, char* argv[])
         for (int xtal = 1; xtal <= 4; xtal++)
         {
             std::string cal_filename = Form("%s/C%iE%i.cal_params.txt",
-                                            calibration_dir.c_str(), det, xtal);
+                                            args.calibrationDir.c_str(), det, xtal);
             cc_E_cal.push_back(CACalibration::MakeCalibration(cal_filename));
         }
     }
@@ -182,7 +165,7 @@ int main(int argc, char* argv[])
         for (int xtal = 1; xtal <= 4; xtal++)
         {
             std::string cal_filename = Form("%s/B%iE%i.cal_params.txt",
-                                            calibration_dir.c_str(), det, xtal);
+                                            args.calibrationDir.c_str(), det, xtal);
             cb_E_cal.push_back(CACalibration::MakeCalibration(cal_filename));
         }
     }
@@ -203,12 +186,12 @@ int main(int argc, char* argv[])
 
     /* #region Event Loop Setup*/
 
-    auto infile = TFile::Open(input_filename.c_str());
+    auto infile = TFile::Open(args.runFileName.c_str());
     if (!infile || infile->IsZombie())
     {
-        throw std::runtime_error(Form("[ERROR] Error opening input file: %s", input_filename.c_str()));
+        throw std::runtime_error(Form("[ERROR] Error opening input file: %s", args.runFileName.c_str()));
     }
-    printf("[INFO] Opened file %s\n", input_filename.c_str());
+    printf("[INFO] Opened file %s\n", args.runFileName.c_str());
 
     // Peak at the TTree to get the number of events
     TTree* tree;
@@ -234,7 +217,7 @@ int main(int argc, char* argv[])
     printf("[INFO] Processing events...\n");
 
     // Create a TTreeReader to read the TTree
-    ROOT::TTreeProcessorMT EventProcessor(input_filename.c_str(), "clover");
+    ROOT::TTreeProcessorMT EventProcessor(args.runFileName.c_str(), "clover");
 
     /* #endregion Event Loop Setup */
 
@@ -450,10 +433,10 @@ int main(int argc, char* argv[])
            static_cast<double>(processedEntries) / timer.RealTime());
 
     // Save the histograms to a new ROOT file
-    TFile* outfile = new TFile(output_filename.c_str(), "RECREATE");
+    TFile* outfile = new TFile(args.outputFileName.c_str(), "RECREATE");
     if (!outfile || outfile->IsZombie())
     {
-        throw std::runtime_error(Form("[ERROR] Error creating output file: %s", output_filename.c_str()));
+        throw std::runtime_error(Form("[ERROR] Error creating output file: %s", args.outputFileName.c_str()));
     }
 
 /* #region Write Histograms */
@@ -508,7 +491,7 @@ int main(int argc, char* argv[])
 
     /* #endregion */
 
-    printf("Saved histograms to file: %s\n", output_filename.c_str());
+    printf("Saved histograms to file: %s\n", args.outputFileName.c_str());
 
     outfile->Close();
     delete outfile;
