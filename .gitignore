@@ -73,5 +73,5 @@ examples/
 *.cags
 
 # IDE specific files
-.vscode/
+.vscode
 *.code-workspace

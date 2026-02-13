@@ -23,93 +23,23 @@
 #include <TTreeReader.h>
 #include <TTreeReaderArray.h>
 
-// Project Includes
+// CASort Includes
 #include "CASort/CAAddBack.hpp"
 #include "CASort/CACalibration.hpp"
 #include "CASort/CAConfiguration.hpp"
 #include "CASort/CACrosstalkCorrection.hpp"
 #include "CASort/CAGainCorrection.hpp"
-#include "CASort/CAHistograms.hpp"
 #include "CASort/CAUtilities.hpp"
+
+// Project Includes
+#include "Histograms.hpp"
+
 /* #endregion Includes */
-
-/* #region DAQ Channel Key */
-// Define which DAQ channels correspond to which detectors (C = Clover HPGe, S =
-// Single Crystal HPGe, c = CeBr, l = LaBr) see elog for details
-
-// clover_cross
-#define C1E1 0
-#define C1E2 1
-#define C1E3 2
-#define C1E4 3
-#define C3E1 4
-#define C3E2 5
-#define C3E3 6
-#define C3E4 7
-#define C5E1 8
-#define C5E2 9
-#define C5E3 10
-#define C5E4 11
-#define C7E1 12
-#define C7E2 13
-#define C7E3 14
-#define C7E4 15
-
-// clover_back
-#define B1E1 0
-#define B1E2 1
-#define B1E3 2
-#define B1E4 3
-#define B2E1 4
-#define B2E2 5
-#define B2E3 6
-#define B2E4 7
-#define B3E1 8
-#define B3E2 9
-#define B3E3 10
-#define B3E4 11
-#define B5E1 12
-#define B5E2 13
-#define B5E3 14
-#define B5E4 15
-
-// pos_sig
-#define ZDEG 0
-#define SB4E1 2
-#define B4E1 4
-#define B4E2 5
-#define B4E3 6
-#define B4E4 7
-
-// cebr_all
-#define cB 0
-#define cC 1
-#define cD 2
-#define cF 3
-#define cG 4
-#define cH 5
-#define cK 6
-#define cO 7
-#define cBJ 8
-#define cBK 9
-#define cBL 10
-#define L3 11
-#define MPAD 12
-
-static const std::map<std::string, int> cross_channel_map = {
-    {"C1E1", C1E1}, {"C1E2", C1E2}, {"C1E3", C1E3}, {"C1E4", C1E4}, {"C3E1", C3E1}, {"C3E2", C3E2}, {"C3E3", C3E3}, {"C3E4", C3E4}, {"C5E1", C5E1}, {"C5E2", C5E2}, {"C5E3", C5E3}, {"C5E4", C5E4}, {"C7E1", C7E1}, {"C7E2", C7E2}, {"C7E3", C7E3}, {"C7E4", C7E4}};
-static const std::map<std::string, int> back_channel_map = {
-    {"B1E1", B1E1}, {"B1E2", B1E2}, {"B1E3", B1E3}, {"B1E4", B1E4}, {"B2E1", B2E1}, {"B2E2", B2E2}, {"B2E3", B2E3}, {"B2E4", B2E4}, {"B3E1", B3E1}, {"B3E2", B3E2}, {"B3E3", B3E3}, {"B3E4", B3E4}, {"B5E1", B5E1}, {"B5E2", B5E2}, {"B5E3", B5E3}, {"B5E4", B5E4}};
-static const std::map<std::string, int> possig_channel_map = {
-    {"ZDEG", ZDEG}, {"SB4E1", SB4E1}, {"B4E1", B4E1}, {"B4E2", B4E2}, {"B4E3", B4E3}, {"B4E4", B4E4}};
-static const std::map<std::string, int> cebr_channel_map = {
-    {"cB", cB}, {"cC", cC}, {"cD", cD}, {"cF", cF}, {"cG", cG}, {"cH", cH}, {"cK", cK}, {"cO", cO}, {"cBJ", cBJ}, {"cBK", cBK}, {"cBL", cBL}, {"L3", L3}, {"MPAD", MPAD}};
-
-/* #endregion DAQ Channel Key*/
 
 // Main function
 int main(int argc, char* argv[])
 {
+
     /* #region Configuration Setup */
 
     auto args = CAUtilities::ParseArguments(argc, argv);
@@ -117,7 +47,6 @@ int main(int argc, char* argv[])
     std::cout << "=============== Welcome to TylerSort! ==================" << std::endl;
     CAUtilities::PrintConfiguration(args);
 
-    // ROOT multithreading is initialized in CAConfiguration.hpp static initializer
     printf("[INFO] ROOT multithreading enabled with %d threads\n", ROOT::GetThreadPoolSize());
 
     /* #endregion Configuration Setup */
@@ -125,67 +54,63 @@ int main(int argc, char* argv[])
     /* #region Calibration Setup */
 
     // Gain match functions
-    std::vector<std::function<double(double)>> cc_E_gmp, cb_E_gmp, ps_E_gmp, ce_T_gmp;
-    auto gain_shift_data = CAGainCorrection::MakeCorrections(args.gainShiftDir, args.runNumber);
+    std::vector<std::function<double(double)>> ccGainMatch, cbGainMatch, psGainMatch, ceGainMatch;
+    auto funcsGainMatch = CAGainCorrection::MakeCorrections(args.gainShiftDir, args.runNumber);
 
     // Cross-talk Correction Functions
-    std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> cc_xtalk_corr, cb_xtalk_corr;
+    std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> ccXTalkCorrection, cbXTalkCorrection;
 
     // Calibraration functions
-    std::vector<std::function<double(double)>> cc_E_cal, cb_E_cal, ps_E_cal, ce_E_cal;
+    std::vector<std::function<double(double)>> ccECalibrate, cbECalibrate, psECalibrate, ceECalibrate;
 
-#if PROCESS_CLOVER_CROSS
     for (int det : {1, 3, 5, 7})
     {
         for (int xtal = 1; xtal <= 4; xtal++)
         {
-            std::string cal_filename = Form("%s/C%iE%i.cal_params.txt",
-                                            args.calibrationDir.c_str(), det, xtal);
-            cc_E_cal.push_back(CACalibration::MakeCalibration(cal_filename));
+            std::string calFileName = Form("%s/C%iE%i.cal_params.txt",
+                                           args.calibrationDir.c_str(), det, xtal);
+            ccECalibrate.push_back(CACalibration::MakeCalibration(calFileName));
         }
     }
     try
     {
-        cc_E_gmp = gain_shift_data.at(0);
+        ccGainMatch = funcsGainMatch.at(0);
         printf("[INFO] Clover Cross Gain Match and Calibration functions retrieved\n");
     }
     catch (const std::exception& e)
     {
         printf("[WARN] Clover Cross Gain Match functions not found, proceeding without gain matching\n");
-        cc_E_gmp = std::vector<std::function<double(double)>>(16, [](double x)
-                                                              { return x; });
+        ccGainMatch = std::vector<std::function<double(double)>>(16, [](double x)
+                                                                 { return x; });
     }
-#endif // PROCESS_CLOVER_CROSS
 
-#if PROCESS_CLOVER_BACK
     for (int det : {1, 2, 3, 5})
     {
         for (int xtal = 1; xtal <= 4; xtal++)
         {
-            std::string cal_filename = Form("%s/B%iE%i.cal_params.txt",
-                                            args.calibrationDir.c_str(), det, xtal);
-            cb_E_cal.push_back(CACalibration::MakeCalibration(cal_filename));
+            std::string calFileName = Form("%s/B%iE%i.cal_params.txt",
+                                           args.calibrationDir.c_str(), det, xtal);
+            cbECalibrate.push_back(CACalibration::MakeCalibration(calFileName));
         }
     }
     try
     {
-        cb_E_gmp = gain_shift_data.at(1);
+        cbGainMatch = funcsGainMatch.at(1);
         printf("[INFO] Clover Back Gain Match and Calibration functions retrieved\n");
     }
     catch (const std::exception& e)
     {
         printf("[WARN] Clover Back Gain Match functions not found, proceeding without gain matching\n");
-        cb_E_gmp = std::vector<std::function<double(double)>>(16, [](double x)
-                                                              { return x; });
+        cbGainMatch = std::vector<std::function<double(double)>>(16, [](double x)
+                                                                 { return x; });
     }
-#endif // PROCESS_CLOVER_BACK
 
     /* #endregion Calibration Setup */
 
     /* #region Event Loop Setup*/
 
-    auto infile = TFile::Open(args.runFileName.c_str());
-    if (!infile || infile->IsZombie())
+    auto inputFile = TFile::Open(args.runFileName.c_str());
+    if (!inputFile || inputFile->IsZombie())
     {
         throw std::runtime_error(Form("[ERROR] Error opening input file: %s", args.runFileName.c_str()));
     }
@@ -193,24 +118,24 @@ int main(int argc, char* argv[])
 
     // Peak at the TTree to get the number of events
     TTree* tree;
-    infile->GetObject("clover", tree);
+    inputFile->GetObject("clover", tree);
     if (!tree)
     {
         throw std::runtime_error("[ERROR] Error opening TTree");
     }
 
-    ULong64_t n_entries = tree->GetEntries();
+    ULong64_t nEntries = tree->GetEntries();
 
-    printf("[INFO] Opened TTree \"clover\" and counted %llu events\n", n_entries);
+    printf("[INFO] Opened TTree \"clover\" and counted %llu events\n", nEntries);
 
     delete tree;
-    infile->Close();
+    inputFile->Close();
 
     // Atomic counter for processed entries
     std::atomic<uint64_t> processedEntries(0);
 
     // Start the progress bar in a separate thread
-    std::thread progressBarThread(CAUtilities::DisplayProgressBar, std::ref(processedEntries), n_entries);
+    std::thread progressBarThread(CAUtilities::DisplayProgressBar, std::ref(processedEntries), nEntries);
 
     printf("[INFO] Processing events...\n");
 
@@ -224,79 +149,115 @@ int main(int argc, char* argv[])
     /* #endregion Event Loop Setup */
 
     // Fill Function
-    auto fillHistograms = [&](TTreeReader& event_reader)
+    auto fillHistograms = [&](TTreeReader& eventReader)
     {
-    /* #region Set the branch addresses for the TTree */
+        /* #region Set the branch addresses for the TTree */
 
-#if PROCESS_CLOVER_CROSS
-        TTreeReaderArray<double> cc_amp_val(event_reader, "clover_cross.amplitude");
-        TTreeReaderArray<double> cc_cht_val(event_reader, "clover_cross.channel_time");
-        TTreeReaderArray<double> cc_mdt_val(event_reader, "clover_cross.module_timestamp");
-        TTreeReaderArray<double> cc_plu_val(event_reader, "clover_cross.pileup");
-        TTreeReaderArray<double> cc_trt_val(event_reader, "clover_cross.trigger_time");
-#endif // PROCESS_CLOVER_CROSS
+        // Clover Cross
+        TTreeReaderArray<double> cc_amp_val(eventReader, "clover_cross.amplitude");
+        TTreeReaderArray<double> cc_cht_val(eventReader, "clover_cross.channel_time");
+        TTreeReaderArray<double> cc_mdt_val(eventReader, "clover_cross.module_timestamp");
+        TTreeReaderArray<double> cc_plu_val(eventReader, "clover_cross.pileup");
+        TTreeReaderArray<double> cc_trt_val(eventReader, "clover_cross.trigger_time");
 
-#if PROCESS_CLOVER_BACK
-        TTreeReaderArray<double> cb_amp_val(event_reader, "clover_back.amplitude");
-        TTreeReaderArray<double> cb_cht_val(event_reader, "clover_back.channel_time");
-        TTreeReaderArray<double> cb_mdt_val(event_reader, "clover_back.module_timestamp");
-        TTreeReaderArray<double> cb_plu_val(event_reader, "clover_back.pileup");
-        TTreeReaderArray<double> cb_trt_val(event_reader, "clover_back.trigger_time");
-#endif // PROCESS_CLOVER_BACK
+        // Clover Back
+        TTreeReaderArray<double> cb_amp_val(eventReader, "clover_back.amplitude");
+        TTreeReaderArray<double> cb_cht_val(eventReader, "clover_back.channel_time");
+        TTreeReaderArray<double> cb_mdt_val(eventReader, "clover_back.module_timestamp");
+        TTreeReaderArray<double> cb_plu_val(eventReader, "clover_back.pileup");
+        TTreeReaderArray<double> cb_trt_val(eventReader, "clover_back.trigger_time");
 
 #if PROCESS_POS_SIG
-        TTreeReaderArray<double> ps_amp_val(event_reader, "pos_sig.amplitude");
-        TTreeReaderArray<double> ps_cht_val(event_reader, "pos_sig.channel_time");
-        TTreeReaderArray<double> ps_mdt_val(event_reader, "pos_sig.module_timestamp");
-        TTreeReaderArray<double> ps_plu_val(event_reader, "pos_sig.pileup");
-        TTreeReaderArray<double> ps_trt_val(event_reader, "pos_sig.trigger_time");
+        // Pos Sig
+        TTreeReaderArray<double> ps_amp_val(eventReader, "pos_sig.amplitude");
+        TTreeReaderArray<double> ps_cht_val(eventReader, "pos_sig.channel_time");
+        TTreeReaderArray<double> ps_mdt_val(eventReader, "pos_sig.module_timestamp");
+        TTreeReaderArray<double> ps_plu_val(eventReader, "pos_sig.pileup");
+        TTreeReaderArray<double> ps_trt_val(eventReader, "pos_sig.trigger_time");
 #endif // PROCESS_POS_SIG
 
 #if PROCESS_CEBR_ALL
-        TTreeReaderArray<double> ce_inl_val(event_reader, "cebr_all.integration_long");
-        TTreeReaderArray<double> ce_cht_val(event_reader, "cebr_all.channel_time");
-        TTreeReaderArray<double> ce_mdt_val(event_reader, "cebr_all.module_timestamp");
-        TTreeReaderArray<double> ce_ins_val(event_reader, "cebr_all.integration_short");
-        TTreeReaderArray<double> ce_trt_val(event_reader, "cebr_all.trigger_time");
+        // CEBR All
+        TTreeReaderArray<double> ce_inL_val(eventReader, "cebr_all.integration_long");
+        TTreeReaderArray<double> ce_cht_val(eventReader, "cebr_all.channel_time");
+        TTreeReaderArray<double> ce_mdt_val(eventReader, "cebr_all.module_timestamp");
+        TTreeReaderArray<double> ce_ins_val(eventReader, "cebr_all.integration_short");
+        TTreeReaderArray<double> ce_trt_val(eventReader, "cebr_all.trigger_time");
 #endif // PROCESS_CEBR_ALL
 
-        /* #endregion */
+/* #endregion */
 
-        /* #region Get Histogram pointers*/
+/* #region Get Histogram pointers*/
 
-        // Use histograms defined in CAHistograms.hpp
+// Use histograms defined in Histograms.hpp
 
-#if PROCESS_CLOVER_CROSS
-        auto cc_amp = CAHistograms::cc_amp.GetThreadLocalPtr();
-        auto cc_cht = CAHistograms::cc_cht.GetThreadLocalPtr();
-        auto cc_plu = CAHistograms::cc_plu.GetThreadLocalPtr();
-        auto cc_trt = CAHistograms::cc_trt.GetThreadLocalPtr();
-        auto cc_mdt = CAHistograms::cc_mdt.GetThreadLocalPtr();
-        auto cc_xtE = CAHistograms::cc_xtE.GetThreadLocalPtr();
-        auto cc_sum = CAHistograms::cc_sum.GetThreadLocalPtr();
-        auto cc_abE = CAHistograms::cc_abE.GetThreadLocalPtr();
-        auto cc_abM = CAHistograms::cc_abM.GetThreadLocalPtr();
+// Clover Cross Hists
+#if FILL_RAW_HISTS
+        auto cc_amp = Histograms::cc_amp.GetThreadLocalPtr();
+        auto cc_cht = Histograms::cc_cht.GetThreadLocalPtr();
+        auto cc_plu = Histograms::cc_plu.GetThreadLocalPtr();
+        auto cc_trt = Histograms::cc_trt.GetThreadLocalPtr();
+        auto cc_mdt = Histograms::cc_mdt.GetThreadLocalPtr();
+#endif // FILL_RAW_HISTS
+
+#if FILL_CAL_HISTS
+        auto cc_chE = Histograms::cc_chE.GetThreadLocalPtr();
+        auto cc_sum = Histograms::cc_sum.GetThreadLocalPtr();
+        auto cc_abE = Histograms::cc_abE.GetThreadLocalPtr();
+        auto cc_abM = Histograms::cc_abM.GetThreadLocalPtr();
+#endif // FILL_CAL_HISTS
+
+#if FILL_XTALK_CORR_HISTS
         auto c1_xtk = std::array<std::shared_ptr<TH2D>, 6>{
-            CAHistograms::c1_xtk[0].GetThreadLocalPtr(),
-            CAHistograms::c1_xtk[1].GetThreadLocalPtr(),
-            CAHistograms::c1_xtk[2].GetThreadLocalPtr(),
-            CAHistograms::c1_xtk[3].GetThreadLocalPtr(),
-            CAHistograms::c1_xtk[4].GetThreadLocalPtr(),
-            CAHistograms::c1_xtk[5].GetThreadLocalPtr(),
+            Histograms::c1_xtk[0].GetThreadLocalPtr(),
+            Histograms::c1_xtk[1].GetThreadLocalPtr(),
+            Histograms::c1_xtk[2].GetThreadLocalPtr(),
+            Histograms::c1_xtk[3].GetThreadLocalPtr(),
+            Histograms::c1_xtk[4].GetThreadLocalPtr(),
+            Histograms::c1_xtk[5].GetThreadLocalPtr(),
         };
-#endif // PROCESS_CLOVER_CROSS
+        auto c3_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::c3_xtk[0].GetThreadLocalPtr(),
+            Histograms::c3_xtk[1].GetThreadLocalPtr(),
+            Histograms::c3_xtk[2].GetThreadLocalPtr(),
+            Histograms::c3_xtk[3].GetThreadLocalPtr(),
+            Histograms::c3_xtk[4].GetThreadLocalPtr(),
+            Histograms::c3_xtk[5].GetThreadLocalPtr(),
+        };
+        auto c5_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::c5_xtk[0].GetThreadLocalPtr(),
+            Histograms::c5_xtk[1].GetThreadLocalPtr(),
+            Histograms::c5_xtk[2].GetThreadLocalPtr(),
+            Histograms::c5_xtk[3].GetThreadLocalPtr(),
+            Histograms::c5_xtk[4].GetThreadLocalPtr(),
+            Histograms::c5_xtk[5].GetThreadLocalPtr(),
+        };
+        auto c7_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::c7_xtk[0].GetThreadLocalPtr(),
+            Histograms::c7_xtk[1].GetThreadLocalPtr(),
+            Histograms::c7_xtk[2].GetThreadLocalPtr(),
+            Histograms::c7_xtk[3].GetThreadLocalPtr(),
+            Histograms::c7_xtk[4].GetThreadLocalPtr(),
+            Histograms::c7_xtk[5].GetThreadLocalPtr(),
+        };
+        std::array<decltype(c1_xtk), 4> cc_xtk = {c1_xtk, c3_xtk, c5_xtk, c7_xtk};
+#endif // FILL_XTALK_CORR_HISTS
 
-#if PROCESS_CLOVER_BACK
-        auto cb_amp = CAHistograms::cb_amp.GetThreadLocalPtr();
-        auto cb_cht = CAHistograms::cb_cht.GetThreadLocalPtr();
-        auto cb_plu = CAHistograms::cb_plu.GetThreadLocalPtr();
-        auto cb_trt = CAHistograms::cb_trt.GetThreadLocalPtr();
-        auto cb_mdt = CAHistograms::cb_mdt.GetThreadLocalPtr();
-        auto cb_xtE = CAHistograms::cb_xtE.GetThreadLocalPtr();
-        auto cb_sum = CAHistograms::cb_sum.GetThreadLocalPtr();
-        auto cb_abE = CAHistograms::cb_abE.GetThreadLocalPtr();
-        auto cb_abM = CAHistograms::cb_abM.GetThreadLocalPtr();
-#endif // PROCESS_CLOVER_BACK
+// Clover Back Hists
+#if FILL_RAW_HISTS
+        auto cb_amp = Histograms::cb_amp.GetThreadLocalPtr();
+        auto cb_cht = Histograms::cb_cht.GetThreadLocalPtr();
+        auto cb_plu = Histograms::cb_plu.GetThreadLocalPtr();
+        auto cb_trt = Histograms::cb_trt.GetThreadLocalPtr();
+        auto cb_mdt = Histograms::cb_mdt.GetThreadLocalPtr();
+#endif // FILL_RAW_HISTS
+
+#if FILL_CAL_HISTS
+        auto cb_xtE = Histograms::cb_xtE.GetThreadLocalPtr();
+        auto cb_sum = Histograms::cb_sum.GetThreadLocalPtr();
+        auto cb_abE = Histograms::cb_abE.GetThreadLocalPtr();
+        auto cb_abM = Histograms::cb_abM.GetThreadLocalPtr();
+#endif // FILL_CAL_HISTS
 
 #if PROCESS_POS_SIG
 
@@ -309,30 +270,21 @@ int main(int argc, char* argv[])
         /* #endregion */
 
         // Loop over the entries in the tree
-        while (event_reader.Next())
+        while (eventReader.Next())
         {
+#if FILL_RAW_HISTS
+            // Module Time
+            cc_mdt->Fill(cc_mdt_val[0] * Histograms::kNsPerBin);
 
-// Module Time
-#if PROCESS_CLOVER_CROSS
-            cc_mdt->Fill(cc_mdt_val[0] * CAHistograms::kNsPerBin);
-#endif // PROCESS_CLOVER_CROSS
+            cb_mdt->Fill(cb_mdt_val[0] * Histograms::kNsPerBin);
 
-#if PROCESS_CLOVER_BACK
-            cb_mdt->Fill(cb_mdt_val[0] * CAHistograms::kNsPerBin);
-#endif // PROCESS_CLOVER_BACK
+            // Trigger Times
+            cc_trt->Fill(cc_trt_val[0] * Histograms::kNsPerBin, 0);
+            cc_trt->Fill(cc_trt_val[1] * Histograms::kNsPerBin, 1);
 
-// Trigger Times
-#if PROCESS_CLOVER_CROSS
-            cc_trt->Fill(cc_trt_val[0] * CAHistograms::kNsPerBin, 0);
-            cc_trt->Fill(cc_trt_val[1] * CAHistograms::kNsPerBin, 1);
-#endif // PROCESS_CLOVER_CROSS
-
-#if PROCESS_CLOVER_BACK
-            cb_trt->Fill(cb_trt_val[0] * CAHistograms::kNsPerBin, 0);
-            cb_trt->Fill(cb_trt_val[1] * CAHistograms::kNsPerBin, 1);
-#endif // PROCESS_CLOVER_BACK
-
-            // Main Loop
+            cb_trt->Fill(cb_trt_val[0] * Histograms::kNsPerBin, 0);
+            cb_trt->Fill(cb_trt_val[1] * Histograms::kNsPerBin, 1);
+#endif // FILL_RAW_HISTS
 
             // Detector Loop
             for (size_t det = 0; det < 4; det++)
@@ -345,70 +297,67 @@ int main(int argc, char* argv[])
                 {
                     auto ch = det * 4 + xtal; // Channel number 0-15
 
-                    // Raw Histograms
-#if PROCESS_CLOVER_CROSS
+// Raw Histograms
+#if FILL_RAW_HISTS
                     cc_amp->Fill(cc_amp_val[ch], ch);
                     cc_cht->Fill(cc_cht_val[ch], ch);
                     cc_plu->Fill(cc_plu_val[ch], ch);
-#endif // PROCESS_CLOVER_CROSS
 
-#if PROCESS_CLOVER_BACK
                     cb_amp->Fill(cb_amp_val[ch], ch);
                     cb_cht->Fill(cb_cht_val[ch], ch);
                     cb_plu->Fill(cb_plu_val[ch], ch);
-#endif // PROCESS_CLOVER_BACK
+#endif // FILL_RAW_HISTS
 
-// Calibrated Histograms
-#if PROCESS_CLOVER_CROSS
+                    // Calibrated Histograms
                     if (!std::isnan(cc_amp_val[ch]) &&
                         !std::isnan(cc_cht_val[ch]))
                     {
                         // std::cout << "Channel: " << ch << ", ";
-                        double energy = cc_E_cal[ch](cc_E_gmp[ch](cc_amp_val[ch])); // Gain-match, then calibrate
-                        double cht = cc_cht_val[ch] * CAHistograms::kNsPerBin;
-                        cc_xtE->Fill(energy, ch);
-                        cc_cht->Fill(cht, ch);
-                        cc_sum->Fill(energy, det); // ch / 4 is the detector number
+                        double energy = ccECalibrate[ch](ccGainMatch[ch](cc_amp_val[ch])); // Gain-match, then calibrate
+                        double cht = cc_cht_val[ch] * Histograms::kNsPerBin;
                         cc_xtal_E[xtal] = energy;
                         cc_xtal_T[xtal] = cht;
+#if FILL_CAL_HISTS
+                        cc_chE->Fill(energy, ch);
+                        cc_sum->Fill(energy, det); // ch / 4 is the detector number
+#endif                                             // FILL_CAL_HISTS
                     }
-#endif // PROCESS_CLOVER_CROSS
 
-#if PROCESS_CLOVER_BACK
                     if (!std::isnan(cb_amp_val[ch]) &&
                         !std::isnan(cb_cht_val[ch]))
                     {
                         // std::cout << "Channel: " << ch << ", ";
-                        double energy = cb_E_cal[ch](cb_E_gmp[ch](cb_amp_val[ch])); // Gain-match, then calibrate
-                        double cht = cb_cht_val[ch] * CAHistograms::kNsPerBin;
-                        cb_xtE->Fill(energy, ch);
-                        cb_cht->Fill(cht, ch);
-                        cb_sum->Fill(energy, det); // ch / 4 is the detector number
+                        double energy = cbECalibrate[ch](cbGainMatch[ch](cb_amp_val[ch])); // Gain-match, then calibrate
+                        double cht = cb_cht_val[ch] * Histograms::kNsPerBin;
                         cb_xtal_E[xtal] = energy;
                         cb_xtal_T[xtal] = cht;
+#if FILL_CAL_HISTS
+                        cb_xtE->Fill(energy, ch);
+                        cb_sum->Fill(energy, det); // ch / 4 is the detector number
+#endif                                             // FILL_CAL_HISTS
                     }
-#endif // PROCESS_CLOVER_BACK
-                }
+                } // End Crystal Loop
 
-// Add-Back Histograms
-#if PROCESS_CLOVER_CROSS
+                unsigned int cc_mult = std::count_if(cc_xtal_E.begin(), cc_xtal_E.end(), [](double x)
+                                                     { return !std::isnan(x); });
+#if FILL_CAL_HISTS
+                // Add-Back Histograms
                 cc_abE->Fill(CAAddBack::GetAddBackEnergy(cc_xtal_E, cc_xtal_T), det);
-                unsigned int mult = std::count_if(cc_xtal_E.begin(), cc_xtal_E.end(), [](double e)
-                                                  { return !std::isnan(e); });
-                cc_abM->Fill(mult, det);
-                if (mult == 2 && det == 0)
-                {
-                    CACrosstalkCorrection::FillXTalkHistograms(c1_xtk, cc_xtal_E, cc_xtal_T);
-                }
-#endif // PROCESS_CLOVER_CROSS
+                cc_abM->Fill(cc_mult, det);
 
-#if PROCESS_CLOVER_BACK
                 cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
-                mult = std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double e)
-                                     { return !std::isnan(e); });
-                cb_abM->Fill(mult, det);
-#endif // PROCESS_CLOVER_BACK
-            }
+                unsigned int cb_mult = std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double x)
+                                                     { return !std::isnan(x); });
+                cb_abM->Fill(cb_mult, det);
+#endif // FILL_CAL_HISTS
+
+                if (cc_mult == 2)
+                {
+                    CACrosstalkCorrection::FillXTalkHistograms(cc_xtk[det], cc_xtal_E, cc_xtal_T);
+                    // CACrosstalkCorrection::FillXTalkHistograms(cb_xtk[det], cb_xtal_E, cb_xtal_T);
+                }
+
+            } // End Detector Loop
 
 #if PROCESS_POS_SIG
 
@@ -419,7 +368,7 @@ int main(int argc, char* argv[])
 #endif // PROCESS_CEBR_ALL
 
             processedEntries++;
-        }
+        } // End Event Loop
     };
 
     // Loop over the entries in the TTree and fill the histograms appropriately
@@ -441,45 +390,55 @@ int main(int argc, char* argv[])
         throw std::runtime_error(Form("[ERROR] Error creating output file: %s", args.outputFileName.c_str()));
     }
 
-/* #region Write Histograms */
+    /* #region Write Histograms */
 
-// Use histograms defined in CAHistograms.hpp
+    // Use histograms defined in Histograms.hpp
 
-// Clover Cross Histograms
-#if PROCESS_CLOVER_CROSS
+    // Clover Cross Histograms
     auto cc_dir = outfile->mkdir("clover_cross");
     cc_dir->cd();
-    CAHistograms::cc_amp.Write();
-    CAHistograms::cc_cht.Write();
-    CAHistograms::cc_plu.Write();
-    CAHistograms::cc_trt.Write();
-    CAHistograms::cc_mdt.Write();
-    CAHistograms::cc_xtE.Write();
-    CAHistograms::cc_sum.Write();
-    CAHistograms::cc_abE.Write();
-    CAHistograms::cc_abM.Write();
+#if FILL_RAW_HISTS
+    Histograms::cc_amp.Write();
+    Histograms::cc_cht.Write();
+    Histograms::cc_plu.Write();
+    Histograms::cc_trt.Write();
+    Histograms::cc_mdt.Write();
+#endif // FILL_RAW_HISTS
+#if FILL_CAL_HISTS
+    Histograms::cc_chE.Write();
+    Histograms::cc_sum.Write();
+    Histograms::cc_abE.Write();
+    Histograms::cc_abM.Write();
+#endif // FILL_CAL_HISTS
+
+#if FILL_XTALK_CORR_HISTS
     for (int i = 0; i < 6; i++)
     {
-        CAHistograms::c1_xtk[i].Write();
+        Histograms::c1_xtk[i].Write();
+        Histograms::c3_xtk[i].Write();
+        Histograms::c5_xtk[i].Write();
+        Histograms::c7_xtk[i].Write();
     }
+#endif // FILL_XTALK_CORR_HISTS
     outfile->cd();
-#endif // PROCESS_CLOVER_CROSS
 
-// Clover Back Histograms
-#if PROCESS_CLOVER_BACK
+    // Clover Back Histograms
     auto cb_dir = outfile->mkdir("clover_back");
     cb_dir->cd();
-    CAHistograms::cb_amp.Write();
-    CAHistograms::cb_cht.Write();
-    CAHistograms::cb_plu.Write();
-    CAHistograms::cb_trt.Write();
-    CAHistograms::cb_mdt.Write();
-    CAHistograms::cb_xtE.Write();
-    CAHistograms::cb_sum.Write();
-    CAHistograms::cb_abE.Write();
-    CAHistograms::cb_abM.Write();
+#if FILL_RAW_HISTS
+    Histograms::cb_amp.Write();
+    Histograms::cb_cht.Write();
+    Histograms::cb_plu.Write();
+    Histograms::cb_trt.Write();
+    Histograms::cb_mdt.Write();
+#endif // FILL_RAW_HISTS
+#if FILL_CAL_HISTS
+    Histograms::cb_xtE.Write();
+    Histograms::cb_sum.Write();
+    Histograms::cb_abE.Write();
+    Histograms::cb_abM.Write();
+#endif // FILL_CAL_HISTS
     outfile->cd();
-#endif // PROCESS_CLOVER_BACK
 
 // Positive Signal Histograms
 #if PROCESS_POS_SIG

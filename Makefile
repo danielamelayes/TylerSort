@@ -4,10 +4,11 @@
 SRC_DIR  := src
 OBJ_DIR  := obj
 BIN_DIR  := bin
+INC_DIR  := include
 
 # Compiler and flags
 CXX       := g++
-CXXFLAGS  := `root-config --cflags` -I~/.local/include -fPIC
+CXXFLAGS  := `root-config --cflags` -I~/.local/include -I$(INC_DIR) -fPIC 
 LDFLAGS   := `root-config --libs` -L~/.local/lib -lCASort -Wl,-rpath,~/.local/lib
 DEBUGFLAGS := -g -O0
 
