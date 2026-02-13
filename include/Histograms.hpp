@@ -88,6 +88,38 @@ namespace Histograms
     auto cb_trt = TCAHistogram<TH2D>("cb_trt", "Clover Back Trigger Time;Time (ns);Trigger ID;Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, 2, 0, 2);
 #endif // FILL_RAW_HISTS
 
+#if FILL_XTALK_CORR_HISTS
+    std::array<TCAHistogram<TH2D>, 6> b1_xtk = {
+        TCAHistogram<TH2D>("B1_xtk_E1E2", "B1 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B1_xtk_E1E3", "B1 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B1_xtk_E1E4", "B1 Cross-Talk E1 by E4;E1;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B1_xtk_E2E3", "B1 Cross-Talk E2 by E3;E2;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B1_xtk_E2E4", "B1 Cross-Talk E2 by E4;E2;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B1_xtk_E3E4", "B1 Cross-Talk E3 by E4;E3;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy)};
+    std::array<TCAHistogram<TH2D>, 6> b2_xtk = {
+        TCAHistogram<TH2D>("B2_xtk_E1E2", "B2 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B2_xtk_E1E3", "B2 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B2_xtk_E1E4", "B2 Cross-Talk E1 by E4;E1;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B2_xtk_E2E3", "B2 Cross-Talk E2 by E3;E2;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B2_xtk_E2E4", "B2 Cross-Talk E2 by E4;E2;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B2_xtk_E3E4", "B2 Cross-Talk E3 by E4;E3;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy)};
+    std::array<TCAHistogram<TH2D>, 6> b3_xtk = {
+        TCAHistogram<TH2D>("B3_xtk_E1E2", "B3 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B3_xtk_E1E3", "B3 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B3_xtk_E1E4", "B3 Cross-Talk E1 by E4;E1;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B3_xtk_E2E3", "B3 Cross-Talk E2 by E3;E2;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B3_xtk_E2E4", "B3 Cross-Talk E2 by E4;E2;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B3_xtk_E3E4", "B3 Cross-Talk E3 by E4;E3;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy)};
+    std::array<TCAHistogram<TH2D>, 6> b5_xtk = {
+        TCAHistogram<TH2D>("B5_xtk_E1E2", "B5 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B5_xtk_E1E3", "B5 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B5_xtk_E1E4", "B5 Cross-Talk E1 by E4;E1;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B5_xtk_E2E3", "B5 Cross-Talk E2 by E3;E2;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B5_xtk_E2E4", "B5 Cross-Talk E2 by E4;E2;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
+        TCAHistogram<TH2D>("B5_xtk_E3E4", "B5 Cross-Talk E3 by E4;E3;E4", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy)};
+
+#endif // FILL_XTALK_CORR_HISTS
+
 #if FILL_CAL_HISTS
     // Calibrated Hists
     auto cb_xtE = TCAHistogram<TH2D>("cb_xtE", "Clover Back Energy;Energy (keV);Channel;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0, kDigitizerChannels);

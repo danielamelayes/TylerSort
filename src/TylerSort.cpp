@@ -259,6 +259,42 @@ int main(int argc, char* argv[])
         auto cb_abM = Histograms::cb_abM.GetThreadLocalPtr();
 #endif // FILL_CAL_HISTS
 
+#if FILL_XTALK_CORR_HISTS
+        auto b1_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::b1_xtk[0].GetThreadLocalPtr(),
+            Histograms::b1_xtk[1].GetThreadLocalPtr(),
+            Histograms::b1_xtk[2].GetThreadLocalPtr(),
+            Histograms::b1_xtk[3].GetThreadLocalPtr(),
+            Histograms::b1_xtk[4].GetThreadLocalPtr(),
+            Histograms::b1_xtk[5].GetThreadLocalPtr(),
+        };
+        auto b2_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::b2_xtk[0].GetThreadLocalPtr(),
+            Histograms::b2_xtk[1].GetThreadLocalPtr(),
+            Histograms::b2_xtk[2].GetThreadLocalPtr(),
+            Histograms::b2_xtk[3].GetThreadLocalPtr(),
+            Histograms::b2_xtk[4].GetThreadLocalPtr(),
+            Histograms::b2_xtk[5].GetThreadLocalPtr(),
+        };
+        auto b3_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::b3_xtk[0].GetThreadLocalPtr(),
+            Histograms::b3_xtk[1].GetThreadLocalPtr(),
+            Histograms::b3_xtk[2].GetThreadLocalPtr(),
+            Histograms::b3_xtk[3].GetThreadLocalPtr(),
+            Histograms::b3_xtk[4].GetThreadLocalPtr(),
+            Histograms::b3_xtk[5].GetThreadLocalPtr(),
+        };
+        auto b5_xtk = std::array<std::shared_ptr<TH2D>, 6>{
+            Histograms::b5_xtk[0].GetThreadLocalPtr(),
+            Histograms::b5_xtk[1].GetThreadLocalPtr(),
+            Histograms::b5_xtk[2].GetThreadLocalPtr(),
+            Histograms::b5_xtk[3].GetThreadLocalPtr(),
+            Histograms::b5_xtk[4].GetThreadLocalPtr(),
+            Histograms::b5_xtk[5].GetThreadLocalPtr(),
+        };
+        std::array<decltype(b1_xtk), 4> cb_xtk = {b1_xtk, b2_xtk, b3_xtk, b5_xtk};
+#endif // FILL_XTALK_CORR_HISTS
+
 #if PROCESS_POS_SIG
 
 #endif // PROCESS_POS_SIG
@@ -354,7 +390,7 @@ int main(int argc, char* argv[])
                 if (cc_mult == 2)
                 {
                     CACrosstalkCorrection::FillXTalkHistograms(cc_xtk[det], cc_xtal_E, cc_xtal_T);
-                    // CACrosstalkCorrection::FillXTalkHistograms(cb_xtk[det], cb_xtal_E, cb_xtal_T);
+                    CACrosstalkCorrection::FillXTalkHistograms(cb_xtk[det], cb_xtal_E, cb_xtal_T);
                 }
 
             } // End Detector Loop
@@ -438,6 +474,16 @@ int main(int argc, char* argv[])
     Histograms::cb_abE.Write();
     Histograms::cb_abM.Write();
 #endif // FILL_CAL_HISTS
+
+#if FILL_XTALK_CORR_HISTS
+    for (int i = 0; i < 6; i++)
+    {
+        Histograms::b1_xtk[i].Write();
+        Histograms::b2_xtk[i].Write();
+        Histograms::b3_xtk[i].Write();
+        Histograms::b5_xtk[i].Write();
+    }
+#endif // FILL_XTALK_CORR_HISTS
     outfile->cd();
 
 // Positive Signal Histograms
@@ -452,12 +498,12 @@ int main(int argc, char* argv[])
 
     /* #endregion */
 
-    printf("Saved histograms to file: %s\n", args.outputFileName.c_str());
+    printf("[INFO] Saved histograms to file: %s\n", args.outputFileName.c_str());
 
     outfile->Close();
     delete outfile;
 
-    printf("Done!\n");
+    printf("[INFO] Done!\n");
 
     return 0;
 }
