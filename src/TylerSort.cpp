@@ -24,12 +24,12 @@
 #include <TTreeReaderArray.h>
 
 // CASort Includes
-#include "CASort/CAAddBack.hpp"
-#include "CASort/CACalibration.hpp"
-#include "CASort/CAConfiguration.hpp"
-#include "CASort/CACrosstalkCorrection.hpp"
-#include "CASort/CAGainCorrection.hpp"
-#include "CASort/CAUtilities.hpp"
+#include <CASort/CAAddBack.hpp>
+#include <CASort/CACalibration.hpp>
+#include <CASort/CAConfiguration.hpp>
+#include <CASort/CACrosstalkCorrection.hpp>
+#include <CASort/CAGainCorrection.hpp>
+#include <CASort/CAUtilities.hpp>
 
 // Project Includes
 #include "Histograms.hpp"
