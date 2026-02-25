@@ -2,9 +2,9 @@
 #define CAHISTOGRAMS_HPP
 
 // Which histograms to fill
-#define FILL_RAW_HISTS true
+#define FILL_RAW_HISTS false
 #define FILL_CAL_HISTS true
-#define FILL_XTALK_CORR_HISTS true
+#define FILL_XTALK_CORR_HISTS false
 
 // C++ Includes
 #include <memory>
@@ -45,10 +45,10 @@ namespace Histograms
 
     // Addback Hists
     auto cc_abE = TCAHistogram<TH2D>("cc_abE", "Clover Cross Energy (Detector Addback);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
-    auto cc_abM = TCAHistogram<TH1D>("cc_abM", "Clover Cross Addback Multiplicity;Multiplicity;Counts/Bin", 4, 1, 5);
 #endif // FILL_CAL_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+    auto cc_abM = TCAHistogram<TH1D>("cc_abM", "Clover Cross Addback Multiplicity;Multiplicity;Counts/Bin", 4, 1, 5);
     std::array<TCAHistogram<TH2D>, 6> c1_xtk = {
         TCAHistogram<TH2D>("C1_xtk_E1E2", "C1 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
         TCAHistogram<TH2D>("C1_xtk_E1E3", "C1 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
@@ -89,6 +89,7 @@ namespace Histograms
 #endif // FILL_RAW_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+    auto cb_abM = TCAHistogram<TH1D>("cb_abM", "Clover Back Addback Multiplicity;Multiplicity;Counts/Bin", 4, 1, 5);
     std::array<TCAHistogram<TH2D>, 6> b1_xtk = {
         TCAHistogram<TH2D>("B1_xtk_E1E2", "B1 Cross-Talk E1 by E2;E1;E2", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
         TCAHistogram<TH2D>("B1_xtk_E1E3", "B1 Cross-Talk E1 by E3;E1;E3", kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy, kXTalkMaxEnergy / kXTalkEnergyPerBin, 0, kXTalkMaxEnergy),
@@ -127,7 +128,6 @@ namespace Histograms
     auto cb_sum = TCAHistogram<TH2D>("cb_sum", "Clover Back Energy (Detector Sum);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
     // Addback Hists
     auto cb_abE = TCAHistogram<TH2D>("cb_abE", "Clover Back Energy (Detector Addback);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
-    auto cb_abM = TCAHistogram<TH1D>("cb_abM", "Clover Back Addback Multiplicity;Multiplicity;Counts/Bin", 4, 0, 4);
 #endif // FILL_CAL_HISTS
 
 #if PROCESS_POS_SIG

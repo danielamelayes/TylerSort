@@ -58,7 +58,18 @@ int main(int argc, char* argv[])
     auto funcsGainMatch = CAGainCorrection::MakeCorrections(args.gainShiftDir, args.runNumber);
 
     // Cross-talk Correction Functions
-    std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> ccXTalkCorrection, cbXTalkCorrection;
+    std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> xTalkCorrection;
+    try
+    {
+        xTalkCorrection = CACrosstalkCorrection::MakeCorrections("/mnt/Data_0/70Ge_Kowalewski/XTalkCorr/70Ge_xtk.caxt");
+        printf("[INFO] Crosstalk correction functions retrieved\n");
+    }
+    catch (const std::exception& e)
+    {
+        printf("[WARN] Crosstalk correction functions not found, proceeding without crosstalk correction\n");
+        xTalkCorrection = std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>>(4, [](std::array<double, 4> x)
+                                                                                                   { return x; });
+    }
 
     // Calibraration functions
     std::vector<std::function<double(double)>> ccECalibrate, cbECalibrate, psECalibrate, ceECalibrate;
@@ -185,13 +196,13 @@ int main(int argc, char* argv[])
         TTreeReaderArray<double> ce_trt_val(eventReader, "cebr_all.trigger_time");
 #endif // PROCESS_CEBR_ALL
 
-/* #endregion */
+        /* #endregion */
 
-/* #region Get Histogram pointers*/
+        /* #region Get Histogram pointers*/
 
-// Use histograms defined in Histograms.hpp
+        // Use histograms defined in Histograms.hpp
 
-// Clover Cross Hists
+        // Clover Cross Hists
 #if FILL_RAW_HISTS
         auto cc_amp = Histograms::cc_amp.GetThreadLocalPtr();
         auto cc_cht = Histograms::cc_cht.GetThreadLocalPtr();
@@ -204,10 +215,10 @@ int main(int argc, char* argv[])
         auto cc_chE = Histograms::cc_chE.GetThreadLocalPtr();
         auto cc_sum = Histograms::cc_sum.GetThreadLocalPtr();
         auto cc_abE = Histograms::cc_abE.GetThreadLocalPtr();
-        auto cc_abM = Histograms::cc_abM.GetThreadLocalPtr();
 #endif // FILL_CAL_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+        auto cc_abM = Histograms::cc_abM.GetThreadLocalPtr();
         auto c1_xtk = std::array<std::shared_ptr<TH2D>, 6>{
             Histograms::c1_xtk[0].GetThreadLocalPtr(),
             Histograms::c1_xtk[1].GetThreadLocalPtr(),
@@ -256,10 +267,10 @@ int main(int argc, char* argv[])
         auto cb_xtE = Histograms::cb_xtE.GetThreadLocalPtr();
         auto cb_sum = Histograms::cb_sum.GetThreadLocalPtr();
         auto cb_abE = Histograms::cb_abE.GetThreadLocalPtr();
-        auto cb_abM = Histograms::cb_abM.GetThreadLocalPtr();
 #endif // FILL_CAL_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+        auto cb_abM = Histograms::cb_abM.GetThreadLocalPtr();
         auto b1_xtk = std::array<std::shared_ptr<TH2D>, 6>{
             Histograms::b1_xtk[0].GetThreadLocalPtr(),
             Histograms::b1_xtk[1].GetThreadLocalPtr(),
@@ -374,23 +385,49 @@ int main(int argc, char* argv[])
                     }
                 } // End Crystal Loop
 
-                unsigned int cc_mult = std::count_if(cc_xtal_E.begin(), cc_xtal_E.end(), [](double x)
-                                                     { return !std::isnan(x); });
-#if FILL_CAL_HISTS
                 // Add-Back Histograms
-                cc_abE->Fill(CAAddBack::GetAddBackEnergy(cc_xtal_E, cc_xtal_T), det);
-                cc_abM->Fill(cc_mult, det);
-
-                cb_abE->Fill(CAAddBack::GetAddBackEnergy(cb_xtal_E, cb_xtal_T), det);
-                unsigned int cb_mult = std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double x)
-                                                     { return !std::isnan(x); });
-                cb_abM->Fill(cb_mult, det);
-#endif // FILL_CAL_HISTS
-
-                if (cc_mult == 2)
+                if (std::any_of(cc_xtal_E.begin(), cc_xtal_E.end(), [](double x)
+                                { return x > CAAddBack::kAddBackThreshold; }))
                 {
-                    CACrosstalkCorrection::FillXTalkHistograms(cc_xtk[det], cc_xtal_E, cc_xtal_T);
-                    CACrosstalkCorrection::FillXTalkHistograms(cb_xtk[det], cb_xtal_E, cb_xtal_T);
+#if FILL_XTALK_CORR_HISTS
+                    // printf("[DEBUG] cc_xtal_E: [%.2f, %.2f, %.2f, %.2f]\n", cc_xtal_E[0], cc_xtal_E[1], cc_xtal_E[2], cc_xtal_E[3]);
+                    unsigned int cc_mult = std::count_if(cc_xtal_E.begin(), cc_xtal_E.end(), [](double x)
+                                                         { return !std::isnan(x); });
+                    cc_abM->Fill(cc_mult, det);
+                    if (cc_mult == 2)
+                        CACrosstalkCorrection::FillXTalkHistograms(cc_xtk[det], cc_xtal_E, cc_xtal_T);
+#endif // FILL_XTALK_CORR_HISTS
+#if FILL_CAL_HISTS
+                    auto energies_corr = xTalkCorrection[4 + det](cc_xtal_E);
+
+                    // printf("[DEBUG] cc_xtal_C: [%.2f, %.2f, %.2f, %.2f]\n", energies_corr[0], energies_corr[1], energies_corr[2], energies_corr[3]);
+
+                    auto energy_ab_corr = CAAddBack::GetAddBackEnergy(energies_corr, cc_xtal_T);
+                    cc_abE->Fill(energy_ab_corr, det);
+// std::cout << "[DEBUG] Done with add-back event" << std::endl;
+#endif // FILL_CAL_HISTS
+                }
+                if (std::any_of(cb_xtal_E.begin(), cb_xtal_E.end(), [](double x)
+                                { return x > CAAddBack::kAddBackThreshold; }))
+                {
+#if FILL_XTALK_CORR_HISTS
+                    unsigned int cb_mult = std::count_if(cb_xtal_E.begin(), cb_xtal_E.end(), [](double x)
+                                                         { return !std::isnan(x); });
+                    cb_abM->Fill(cb_mult, det);
+                    if (cb_mult == 2)
+                        CACrosstalkCorrection::FillXTalkHistograms(cb_xtk[det], cb_xtal_E, cb_xtal_T);
+                    // printf("[DEBUG] cb_xtal_E: [%.2f, %.2f, %.2f, %.2f]\n", cb_xtal_E[0], cb_xtal_E[1], cb_xtal_E[2], cb_xtal_E[3]);
+#endif // FILL_XTALK_CORR_HISTS
+#if FILL_CAL_HISTS
+
+                    auto energies_corr = xTalkCorrection[det](cb_xtal_E);
+
+                    // printf("[DEBUG] cc_xtal_C: [%.2f, %.2f, %.2f, %.2f]\n", energies_corr[0], energies_corr[1], energies_corr[2], energies_corr[3]);
+
+                    auto energy_ab_corr = CAAddBack::GetAddBackEnergy(energies_corr, cb_xtal_T);
+                    cb_abE->Fill(energy_ab_corr, det);
+// std::cout << "[DEBUG] Done with add-back event" << std::endl;
+#endif // FILL_CAL_HISTS
                 }
 
             } // End Detector Loop
@@ -444,10 +481,10 @@ int main(int argc, char* argv[])
     Histograms::cc_chE.Write();
     Histograms::cc_sum.Write();
     Histograms::cc_abE.Write();
-    Histograms::cc_abM.Write();
 #endif // FILL_CAL_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+    Histograms::cc_abM.Write();
     for (int i = 0; i < 6; i++)
     {
         Histograms::c1_xtk[i].Write();
@@ -472,10 +509,10 @@ int main(int argc, char* argv[])
     Histograms::cb_xtE.Write();
     Histograms::cb_sum.Write();
     Histograms::cb_abE.Write();
-    Histograms::cb_abM.Write();
 #endif // FILL_CAL_HISTS
 
 #if FILL_XTALK_CORR_HISTS
+    Histograms::cb_abM.Write();
     for (int i = 0; i < 6; i++)
     {
         Histograms::b1_xtk[i].Write();
