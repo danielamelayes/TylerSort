@@ -55,13 +55,13 @@ int main(int argc, char* argv[])
 
     // Gain match functions
     std::vector<std::function<double(double)>> ccGainMatch, cbGainMatch, psGainMatch, ceGainMatch;
-    auto funcsGainMatch = CAGainCorrection::MakeCorrections(args.gainShiftDir, args.runNumber);
+    auto funcsGainMatch = CAGainCorrection::MakeCorrections(args.gainShiftFile);
 
     // Cross-talk Correction Functions
     std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> xTalkCorrection;
     try
     {
-        xTalkCorrection = CACrosstalkCorrection::MakeCorrections("/mnt/Data_0/70Ge_Kowalewski/XTalkCorr/70Ge_xtk.caxt");
+        xTalkCorrection = CACrosstalkCorrection::MakeCorrections("/mnt/Data_0/70Ge_Kowalewski/CAXTalkCorr/70Ge_xtk.caxt");
         printf("[INFO] Crosstalk correction functions retrieved\n");
     }
     catch (const std::exception& e)
