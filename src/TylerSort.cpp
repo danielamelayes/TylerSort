@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>> xTalkCorrection;
     try
     {
-        xTalkCorrection = CACrosstalkCorrection::MakeCorrections("/mnt/Data_0/70Ge_Kowalewski/CAXTalkCorr/70Ge_xtk.caxt");
+        xTalkCorrection = CACrosstalkCorrection::MakeCorrections("/mnt/Data_0/70Ge_Kowalewski/CAXTalkCorr/out.caxt");
         printf("[INFO] Crosstalk correction functions retrieved\n");
     }
     catch (const std::exception& e)
