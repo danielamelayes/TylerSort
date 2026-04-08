@@ -347,11 +347,11 @@ int main(int argc, char* argv[])
 // Raw Histograms
 #if FILL_RAW_HISTS
                     cc_amp->Fill(cc_amp_val[ch], ch);
-                    cc_cht->Fill(cc_cht_val[ch], ch);
+                    cc_cht->Fill(cc_cht_val[ch] * Histograms::kNsPerBin, ch);
                     cc_plu->Fill(cc_plu_val[ch], ch);
 
                     cb_amp->Fill(cb_amp_val[ch], ch);
-                    cb_cht->Fill(cb_cht_val[ch], ch);
+                    cb_cht->Fill(cb_cht_val[ch] * Histograms::kNsPerBin, ch);
                     cb_plu->Fill(cb_plu_val[ch], ch);
 #endif // FILL_RAW_HISTS
 
