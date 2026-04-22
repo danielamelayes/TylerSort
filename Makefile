@@ -5,6 +5,7 @@ SRC_DIR  := src
 OBJ_DIR  := obj
 BIN_DIR  := bin
 INC_DIR  := include
+INSTALL_DIR := $(HOME)/.local/bin
 
 # Compiler and flags
 CXX       := g++
@@ -36,12 +37,20 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean up build artifacts
+# Install/uninstall targets
+install: $(TARGET)
+	@mkdir -p $(INSTALL_DIR)
+	install -m 755 $(TARGET) $(INSTALL_DIR)/$(notdir $(TARGET))
+
+uninstall:
+	rm -f $(INSTALL_DIR)/$(notdir $(TARGET))
+
+# Clean target
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
 # A quick test target
 test: $(TARGET)
-	$(TARGET) ~/TUNL/Data/NRF/70Ge/energy_calibration/calibrations ../../example_data ../../example_data 196 out.196.root
+	$(TARGET) --caldir=data/energy_calibration --gsfile=data/gain_correction/70Ge_default.cags data/trees/root_data_70Ge_run208.mvmelst.bin_tree.root data/hists/test/test.hists.root
 
 .PHONY: all clean debug
