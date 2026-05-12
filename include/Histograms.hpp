@@ -20,13 +20,13 @@
 namespace Histograms
 {
     // Constants
-    inline constexpr double kMaxEnergy = 10000.0;           // Maximum energy for histograms in keV
-    inline constexpr double kXTalkMaxEnergy = 6000.0;       // Maximum energy for cross-talk histograms in keV
-    inline constexpr double kEnergyPerBin = 0.50;           // Energy per bin in keV
-    inline constexpr double kXTalkEnergyPerBin = 5.0;       // Coarser binning for 2D cross-talk histograms
-    inline constexpr double kNsPerBin = 0.098;              // Conversion factor from bin to nanoseconds
-    inline constexpr unsigned int kDigitizerBins = 1 << 16; // Number of bins in the digitizer (16-bit)
-    inline constexpr unsigned int kDigitizerChannels = 16;  // Number of channels in digitizer
+    inline constexpr double kMaxEnergy = 10000.0;             // Maximum energy for histograms in keV
+    inline constexpr double kXTalkMaxEnergy = 6000.0;         // Maximum energy for cross-talk histograms in keV
+    inline constexpr double kEnergyPerBin = 0.50;             // Energy per bin in keV
+    inline constexpr double kXTalkEnergyPerBin = 5.0;         // Coarser binning for 2D cross-talk histograms
+    inline constexpr double kNsPerBin = 0.098;                // Conversion factor from bin to nanoseconds
+    inline constexpr unsigned int kDigitizerBins = 1u << 16u; // Number of bins in the digitizer (16-bit)
+    inline constexpr unsigned int kDigitizerChannels = 16u;   // Number of channels in digitizer
 
 #if FILL_RAW_HISTS
     // Raw Hists
@@ -123,7 +123,7 @@ namespace Histograms
 
 #if FILL_CAL_HISTS
     // Calibrated Hists
-    auto cb_xtE = TCAHistogram<TH2D>("cb_xtE", "Clover Back Energy;Energy (keV);Channel;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0, kDigitizerChannels);
+    auto cb_chE = TCAHistogram<TH2D>("cb_chE", "Clover Back Energy;Energy (keV);Channel;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0, kDigitizerChannels);
     // Sum Hists
     auto cb_sum = TCAHistogram<TH2D>("cb_sum", "Clover Back Energy (Detector Sum);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
     // Addback Hists

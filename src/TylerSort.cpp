@@ -49,11 +49,12 @@ int main(int argc, char* argv[])
 
     printf("[INFO] ROOT multithreading enabled with %d threads\n", ROOT::GetThreadPoolSize());
 
-    /* #endregion Configuration Setup */
+/* #endregion Configuration Setup */
 
-    /* #region Calibration Setup */
+/* #region Calibration Setup */
 
-    // Gain match functions
+// Gain match functions
+#if FILL_CAL_HISTS
     std::vector<std::function<double(double)>> ccGainMatch, cbGainMatch, psGainMatch, ceGainMatch;
     auto funcsGainMatch = CAGainCorrection::MakeCorrections(args.gainShiftFile);
 
@@ -115,7 +116,7 @@ int main(int argc, char* argv[])
         cbGainMatch = std::vector<std::function<double(double)>>(16, [](double x)
                                                                  { return x; });
     }
-
+#endif // FILL_CAL_HISTS
     /* #endregion Calibration Setup */
 
     /* #region Event Loop Setup*/
@@ -264,7 +265,7 @@ int main(int argc, char* argv[])
 #endif // FILL_RAW_HISTS
 
 #if FILL_CAL_HISTS
-        auto cb_xtE = Histograms::cb_xtE.GetThreadLocalPtr();
+        auto cb_chE = Histograms::cb_chE.GetThreadLocalPtr();
         auto cb_sum = Histograms::cb_sum.GetThreadLocalPtr();
         auto cb_abE = Histograms::cb_abE.GetThreadLocalPtr();
 #endif // FILL_CAL_HISTS
@@ -349,7 +350,6 @@ int main(int argc, char* argv[])
                     cc_amp->Fill(cc_amp_val[ch], ch);
                     cc_cht->Fill(cc_cht_val[ch] * Histograms::kNsPerBin, ch);
                     cc_plu->Fill(cc_plu_val[ch], ch);
-
                     cb_amp->Fill(cb_amp_val[ch], ch);
                     cb_cht->Fill(cb_cht_val[ch] * Histograms::kNsPerBin, ch);
                     cb_plu->Fill(cb_plu_val[ch], ch);
@@ -359,12 +359,13 @@ int main(int argc, char* argv[])
                     if (!std::isnan(cc_amp_val[ch]) &&
                         !std::isnan(cc_cht_val[ch]))
                     {
+#if FILL_CAL_HISTS
                         // std::cout << "Channel: " << ch << ", ";
                         double energy = ccECalibrate[ch](ccGainMatch[ch](cc_amp_val[ch])); // Gain-match, then calibrate
                         double cht = cc_cht_val[ch] * Histograms::kNsPerBin;
                         cc_xtal_E[xtal] = energy;
                         cc_xtal_T[xtal] = cht;
-#if FILL_CAL_HISTS
+
                         cc_chE->Fill(energy, ch);
                         cc_sum->Fill(energy, det); // ch / 4 is the detector number
 #endif                                             // FILL_CAL_HISTS
@@ -373,13 +374,13 @@ int main(int argc, char* argv[])
                     if (!std::isnan(cb_amp_val[ch]) &&
                         !std::isnan(cb_cht_val[ch]))
                     {
+#if FILL_CAL_HISTS
                         // std::cout << "Channel: " << ch << ", ";
                         double energy = cbECalibrate[ch](cbGainMatch[ch](cb_amp_val[ch])); // Gain-match, then calibrate
                         double cht = cb_cht_val[ch] * Histograms::kNsPerBin;
                         cb_xtal_E[xtal] = energy;
                         cb_xtal_T[xtal] = cht;
-#if FILL_CAL_HISTS
-                        cb_xtE->Fill(energy, ch);
+                        cb_chE->Fill(energy, ch);
                         cb_sum->Fill(energy, det); // ch / 4 is the detector number
 #endif                                             // FILL_CAL_HISTS
                     }
@@ -506,7 +507,7 @@ int main(int argc, char* argv[])
     Histograms::cb_mdt.Write();
 #endif // FILL_RAW_HISTS
 #if FILL_CAL_HISTS
-    Histograms::cb_xtE.Write();
+    Histograms::cb_chE.Write();
     Histograms::cb_sum.Write();
     Histograms::cb_abE.Write();
 #endif // FILL_CAL_HISTS
