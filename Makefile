@@ -10,7 +10,7 @@ INSTALL_DIR := $(HOME)/.local/bin
 # Compiler and flags
 CXX       := g++
 CXXFLAGS  := `root-config --cflags` -I~/.local/include -I$(INC_DIR) -fPIC 
-LDFLAGS   := `root-config --libs` -L~/.local/lib -lCASort -Wl,-rpath,~/.local/lib
+LDFLAGS   := `root-config --libs` -L~/.local/lib -lCASort -lboost_program_options -Wl,-rpath,~/.local/lib
 DEBUGFLAGS := -g -O0
 
 # Target executable name
