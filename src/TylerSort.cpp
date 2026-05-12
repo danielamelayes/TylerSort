@@ -198,14 +198,13 @@ int main(int argc, char* argv[])
             TTreeReaderArray<double> ps_trt_val(eventReader, "pos_sig.trigger_time");
             #endif // PROCESS_POS_SIG
 
-            #if PROCESS_CEBR_ALL
             // CEBR All
             TTreeReaderArray<double> ce_inL_val(eventReader, "cebr_all.integration_long");
             TTreeReaderArray<double> ce_cht_val(eventReader, "cebr_all.channel_time");
             TTreeReaderArray<double> ce_mdt_val(eventReader, "cebr_all.module_timestamp");
             TTreeReaderArray<double> ce_ins_val(eventReader, "cebr_all.integration_short");
             TTreeReaderArray<double> ce_trt_val(eventReader, "cebr_all.trigger_time");
-            #endif // PROCESS_CEBR_ALL
+
 
             /* #endregion */
 
@@ -229,18 +228,30 @@ int main(int argc, char* argv[])
             std::shared_ptr<TH1D> cb_abM;
             std::array<std::shared_ptr<TH2D>, 6> b1_xtk{}, b2_xtk{}, b3_xtk{}, b5_xtk{};
 
+            // CeBr thread-local histogram pointers
+            std::shared_ptr<TH2D> ce_inl, ce_ins, ce_cht, ce_trt;
+            std::shared_ptr<TH1D> ce_mdt;
+
             if (isRaw)
             {
+                // Clover Cross
                 cc_amp = Histograms::cc_amp->GetThreadLocalPtr();
                 cc_cht = Histograms::cc_cht->GetThreadLocalPtr();
                 cc_plu = Histograms::cc_plu->GetThreadLocalPtr();
                 cc_mdt = Histograms::cc_mdt->GetThreadLocalPtr();
                 cc_trt = Histograms::cc_trt->GetThreadLocalPtr();
+                // Clover Back
                 cb_amp = Histograms::cb_amp->GetThreadLocalPtr();
                 cb_cht = Histograms::cb_cht->GetThreadLocalPtr();
                 cb_plu = Histograms::cb_plu->GetThreadLocalPtr();
                 cb_mdt = Histograms::cb_mdt->GetThreadLocalPtr();
                 cb_trt = Histograms::cb_trt->GetThreadLocalPtr();
+                // CeBr Detectors
+                ce_inl = Histograms::ce_inl->GetThreadLocalPtr();
+                ce_ins = Histograms::ce_ins->GetThreadLocalPtr();
+                ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
+                ce_mdt = Histograms::ce_mdt->GetThreadLocalPtr();
+                ce_trt = Histograms::ce_trt->GetThreadLocalPtr();
             }
             if (isCal)
             {
@@ -278,11 +289,14 @@ int main(int argc, char* argv[])
                     // Module Time
                     cc_mdt->Fill(cc_mdt_val[0] * Histograms::kNsPerBin);
                     cb_mdt->Fill(cb_mdt_val[0] * Histograms::kNsPerBin);
+                    ce_mdt->Fill(ce_mdt_val[0] * Histograms::kNsPerBin);
                     // Trigger Times
                     cc_trt->Fill(cc_trt_val[0] * Histograms::kNsPerBin, 0);
                     cc_trt->Fill(cc_trt_val[1] * Histograms::kNsPerBin, 1);
                     cb_trt->Fill(cb_trt_val[0] * Histograms::kNsPerBin, 0);
                     cb_trt->Fill(cb_trt_val[1] * Histograms::kNsPerBin, 1);
+                    ce_trt->Fill(ce_trt_val[0] * Histograms::kNsPerBin, 0);
+                    ce_trt->Fill(ce_trt_val[1] * Histograms::kNsPerBin, 1);
                 }
 
                 // Detector Loop
@@ -298,12 +312,18 @@ int main(int argc, char* argv[])
 
                         if (isRaw)
                         {
+                            // Clover Cross
                             cc_amp->Fill(cc_amp_val[ch], ch);
                             cc_cht->Fill(cc_cht_val[ch] * Histograms::kNsPerBin, ch);
                             cc_plu->Fill(cc_plu_val[ch], ch);
+                            // Clover Back
                             cb_amp->Fill(cb_amp_val[ch], ch);
                             cb_cht->Fill(cb_cht_val[ch] * Histograms::kNsPerBin, ch);
                             cb_plu->Fill(cb_plu_val[ch], ch);
+                            // CeBr Detectors
+                            ce_inl->Fill(ce_inL_val[ch], ch);
+                            ce_ins->Fill(ce_ins_val[ch], ch);
+                            ce_cht->Fill(ce_cht_val[ch] * Histograms::kNsPerBin, ch);
                         }
 
                         if (isCal && !std::isnan(cc_amp_val[ch]) && !std::isnan(cc_cht_val[ch]))
@@ -453,6 +473,23 @@ int main(int argc, char* argv[])
             Histograms::b3_xtk[i]->Write();
             Histograms::b5_xtk[i]->Write();
         }
+    }
+    outfile->cd();
+
+    // CeBr Histograms
+    auto ce_dir = outfile->mkdir("cebr_all");
+    ce_dir->cd();
+    if (args.mode == "raw")
+    {
+        Histograms::ce_inl->Write();
+        Histograms::ce_ins->Write();
+        Histograms::ce_cht->Write();
+        Histograms::ce_trt->Write();
+        Histograms::ce_mdt->Write();
+    }
+    if (args.mode == "cal" || args.mode == "xtcorr")
+    {
+        Histograms::ce_chE->Write();
     }
     outfile->cd();
 

@@ -26,31 +26,45 @@ namespace Histograms
     inline constexpr unsigned int kDigitizerChannels = 16u;   // Number of channels in digitizer
 
     // --- Raw histograms (mode == "raw") ---
+    // Clover Cross
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_amp;
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_cht;
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_plu;
     inline std::unique_ptr<TCAHistogram<TH1D>> cc_mdt;
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_trt;
+    // Clover Back
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_amp;
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_cht;
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_plu;
     inline std::unique_ptr<TCAHistogram<TH1D>> cb_mdt;
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_trt;
+    // CeBr Detectors
+    inline std::unique_ptr<TCAHistogram<TH2D>> ce_inl;
+    inline std::unique_ptr<TCAHistogram<TH2D>> ce_ins;
+    inline std::unique_ptr<TCAHistogram<TH2D>> ce_cht;
+    inline std::unique_ptr<TCAHistogram<TH1D>> ce_mdt;
+    inline std::unique_ptr<TCAHistogram<TH2D>> ce_trt;
 
     // --- Calibrated histograms (mode == "cal" or "xtcorr") ---
+    // Clover Cross
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_chE;
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_sum;
     inline std::unique_ptr<TCAHistogram<TH2D>> cc_abE;
+    // Clover Back
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_chE;
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_sum;
     inline std::unique_ptr<TCAHistogram<TH2D>> cb_abE;
+    // CeBr Detectors
+    inline std::unique_ptr<TCAHistogram<TH2D>> ce_chE;
 
     // --- Cross-talk correction histograms (mode == "xtcorr") ---
+    // Clover Cross
     inline std::unique_ptr<TCAHistogram<TH1D>> cc_abM;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> c1_xtk;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> c3_xtk;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> c5_xtk;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> c7_xtk;
+    // Clover Back
     inline std::unique_ptr<TCAHistogram<TH1D>> cb_abM;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> b1_xtk;
     inline std::array<std::unique_ptr<TCAHistogram<TH2D>>, 6> b2_xtk;
@@ -73,6 +87,12 @@ namespace Histograms
             cb_plu = std::make_unique<TCAHistogram<TH2D>>("cb_plu", "Clover Back Pile-Up;Pile-Up Multiplicity;Channel;Counts/Bin", kDigitizerBins, 0, kDigitizerBins, kDigitizerChannels, 0, kDigitizerChannels);
             cb_mdt = std::make_unique<TCAHistogram<TH1D>>("cb_mdt", "Clover Back Module Time;Time (ns);Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin);
             cb_trt = std::make_unique<TCAHistogram<TH2D>>("cb_trt", "Clover Back Trigger Time;Time (ns);Trigger ID;Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, 2, 0, 2);
+            // CeBr Detetectors
+            ce_inl = std::make_unique<TCAHistogram<TH2D>>("ce_inl", "CeBr Integration Long (Raw Data);ADC;Channel;Counts/Bin", kDigitizerBins, 0, kDigitizerBins, kDigitizerChannels, 0, kDigitizerChannels);
+            ce_ins = std::make_unique<TCAHistogram<TH2D>>("ce_ins", "CeBr Integration Short (Raw Data);ADC;Channel;Counts/Bin", kDigitizerBins, 0, kDigitizerBins, kDigitizerChannels, 0, kDigitizerChannels);
+            ce_cht = std::make_unique<TCAHistogram<TH2D>>("ce_cht", "CeBr Channel Time (Raw Data);ADC;Channel;Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+            ce_mdt = std::make_unique<TCAHistogram<TH1D>>("ce_mdt", "CeBr Module Time;Time (ns);Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin);
+            ce_trt = std::make_unique<TCAHistogram<TH2D>>("ce_trt", "CeBr Trigger Time;Time (ns);Trigger ID;Counts/Bin", kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, 2, 0, 2);
         }
         else if (mode == "cal")
         {
@@ -84,6 +104,8 @@ namespace Histograms
             cb_chE = std::make_unique<TCAHistogram<TH2D>>("cb_chE", "Clover Back Energy;Energy (keV);Channel;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0, kDigitizerChannels);
             cb_sum = std::make_unique<TCAHistogram<TH2D>>("cb_sum", "Clover Back Energy (Detector Sum);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
             cb_abE = std::make_unique<TCAHistogram<TH2D>>("cb_abE", "Clover Back Energy (Detector Addback);Energy (keV);Detector;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
+            // CeBr Detectors
+            ce_chE = std::make_unique<TCAHistogram<TH2D>>("ce_chE", "CeBr Energy;Energy (keV);Channel;Counts/Bin", kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0, kDigitizerChannels);
 
         }
         else if (mode == "xtcorr")
