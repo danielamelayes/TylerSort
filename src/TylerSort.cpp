@@ -138,17 +138,26 @@ int main(int argc, char* argv[])
     }
     printf("[INFO] Opened file %s\n", args.runFileName.c_str());
 
-    // Peak at the TTree to get the number of events
-    TTree* tree;
-    inputFile->GetObject("clover", tree);
-    if (!tree)
+    // Find the first TTree in the file, regardless of name
+    std::string treeName;
+    for (auto* key : *inputFile->GetListOfKeys())
     {
-        throw std::runtime_error("[ERROR] Error opening TTree");
+        if (std::string(static_cast<TKey*>(key)->GetClassName()) == "TTree")
+        {
+            treeName = key->GetName();
+            break;
+        }
     }
+    if (treeName.empty())
+        throw std::runtime_error("[ERROR] No TTree found in input file");
+
+    TTree* tree = inputFile->Get<TTree>(treeName.c_str());
+    if (!tree)
+        throw std::runtime_error("[ERROR] Error opening TTree '" + treeName + "'");
 
     ULong64_t nEntries = tree->GetEntries();
 
-    printf("[INFO] Opened TTree \"clover\" and counted %llu events\n", nEntries);
+    printf("[INFO] Opened TTree \"%s\" and counted %llu events\n", treeName.c_str(), nEntries);
 
     delete tree;
     inputFile->Close();
@@ -166,7 +175,7 @@ int main(int argc, char* argv[])
     ROOT::TTreeProcessorMT::SetTasksPerWorkerHint(1);
 
     // Create a TTreeReader to read the TTree
-    ROOT::TTreeProcessorMT EventProcessor(args.runFileName.c_str(), "clover");
+    ROOT::TTreeProcessorMT EventProcessor(args.runFileName.c_str(), treeName.c_str());
 
     /* #endregion Event Loop Setup */
 
