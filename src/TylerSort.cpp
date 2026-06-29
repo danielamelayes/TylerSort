@@ -116,6 +116,32 @@ int main(int argc, char* argv[])
             printf("[WARN] Clover Back Gain Match functions not found, proceeding without gain matching\n");
             cbGainMatch = std::vector<std::function<double(double)>>(16, [](double x) { return x; });
         }
+
+        std::vector<char> prefixes = {'B', 'C', 'D', 'F', 'G', 'H','J', 'K','L', 'O', 'R'};
+
+        for (char prefix: prefixes)
+        {
+            for (int det: {1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13})
+            {
+                for ( int xtal = 1; xtal <= 4; xtal++)
+                {
+                    std::string calFileName = Form("%s/%c%iE1.cal_params.txt", args.calibrationDir.c_str(), prefix, det, xtal);
+                    ceECalibrate.push_back(CACalibration::MakeCalibration(calFileName));
+                }
+
+            }
+
+        }
+        try 
+        {
+            ceGainMatch =. funcsGainMatch.at(2);
+            printf("[INFO] CeBr Energy Calibration functions retricved \n");
+        }
+        catch(const std::exception& e)
+        {
+            printf("[WARN] Energy Calibration functions not found, not proceeding with energy calibration\n");
+            ceGainMatch = std::vector<std::function<double(double)>>(16, [](double x){return x; });
+        }
     }
 
     /* #endregion Calibration Setup */
@@ -257,6 +283,12 @@ int main(int argc, char* argv[])
             cb_chE = Histograms::cb_chE->GetThreadLocalPtr();
             cb_sum = Histograms::cb_sum->GetThreadLocalPtr();
             cb_abE = Histograms::cb_abE->GetThreadLocalPtr();
+
+            //CeBr addition 
+
+            ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
+            ce_sum = Histograms::ce_sum->GetThreadLocalPtr();
+            ce_abE = Histograms::ce_abE->GetThreadLocalPtr();
         }
         if (isXtcorr)
         {
@@ -322,25 +354,40 @@ int main(int argc, char* argv[])
                         ce_cht->Fill(ce_cht_val[ch] * Histograms::kNsPerBin, ch);
                     }
 
-                    if (isCal && !std::isnan(cc_amp_val[ch]) && !std::isnan(cc_cht_val[ch]))
-                    {
-                        double energy   = ccECalibrate[ch](ccGainMatch[ch](cc_amp_val[ch]));
-                        double cht      = cc_cht_val[ch] * Histograms::kNsPerBin;
-                        cc_xtal_E[xtal] = energy;
-                        cc_xtal_T[xtal] = cht;
-                        cc_chE->Fill(energy, ch);
-                        cc_sum->Fill(energy, det);
+                    if (isCal) {
+                        // Cross
+                        if (!std::isnan(cc_amp_val[ch]) && !std::isnan(cc_cht_val[ch]))
+                        {
+                            double energy   = ccECalibrate[ch](ccGainMatch[ch](cc_amp_val[ch]));
+                            double cht      = cc_cht_val[ch] * Histograms::kNsPerBin;
+                            cc_xtal_E[xtal] = energy;
+                            cc_xtal_T[xtal] = cht;
+                            cc_chE->Fill(energy, ch);
+                            cc_sum->Fill(energy, det);
+                        }
+                        
+                        // Back
+                        if (!std::isnan(cb_amp_val[ch]) && !std::isnan(cb_cht_val[ch]))
+                        {
+                            double energy   = cbECalibrate[ch](cbGainMatch[ch](cb_amp_val[ch]));
+                            double cht      = cb_cht_val[ch] * Histograms::kNsPerBin;
+                            cb_xtal_E[xtal] = energy;
+                            cb_xtal_T[xtal] = cht;
+                            cb_chE->Fill(energy, ch);
+                            cb_sum->Fill(energy, det);
+                        }
+
+                        // CeBr Calibration
+                        if (!std::isnan(ce_inl_val[ch]) && !std::isnan(ce_cht_val[ch]))
+                        {
+                            double energy   = ceECalibrate[ch](ceGainMatch[ch](ce_inl_val[ch]));
+                            double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
+                            ce_chE->Fill(energy, ch);
+                            ce_sum->Fill(energy, det);
+                        }
                     }
 
-                    if (isCal && !std::isnan(cb_amp_val[ch]) && !std::isnan(cb_cht_val[ch]))
-                    {
-                        double energy   = cbECalibrate[ch](cbGainMatch[ch](cb_amp_val[ch]));
-                        double cht      = cb_cht_val[ch] * Histograms::kNsPerBin;
-                        cb_xtal_E[xtal] = energy;
-                        cb_xtal_T[xtal] = cht;
-                        cb_chE->Fill(energy, ch);
-                        cb_sum->Fill(energy, det);
-                    }
+                    
                 } // End Crystal Loop
 
                 // Clover Cross Add-Back
@@ -374,6 +421,9 @@ int main(int argc, char* argv[])
                     auto energy_ab_corr = CAAddBack::GetAddBackEnergy(energies_corr, cb_xtal_T);
                     cb_abE->Fill(energy_ab_corr, det);
                 }
+                //Coincidence Loop
+
+
 
             } // End Detector Loop
 
