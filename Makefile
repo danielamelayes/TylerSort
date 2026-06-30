@@ -9,8 +9,14 @@ INSTALL_DIR := $(HOME)/.local/bin
 
 # Compiler and flags
 CXX       := g++
-CXXFLAGS  := `root-config --cflags` -I~/.local/include -I$(INC_DIR) -fPIC 
-LDFLAGS   := `root-config --libs` -L~/.local/lib -lCASort -lboost_program_options -Wl,-rpath,~/.local/lib
+CASORT_LIB := ../CASort/lib/libCASort.so
+BREW_PREFIX := $(shell brew --prefix 2>/dev/null)
+BOOST_LIB := 
+ifneq ($(BREW_PREFIX),)
+BOOST_LIB := -L$(BREW_PREFIX)/lib
+endif
+CXXFLAGS  := `root-config --cflags` -I$(HOME)/.local/include -I$(INC_DIR) -fPIC 
+LDFLAGS   := `root-config --libs` -L$(HOME)/.local/lib $(BOOST_LIB) -lCASort -lboost_program_options -Wl,-rpath,$(HOME)/.local/lib
 DEBUGFLAGS := -g -O0
 
 # Target executable name
@@ -26,6 +32,12 @@ all: $(TARGET)
 # Debug target
 debug: CXXFLAGS += $(DEBUGFLAGS)
 debug: clean all
+
+# Ensure CASort is installed before compiling or linking TylerSort
+$(CASORT_LIB):
+	$(MAKE) -C ../CASort install
+
+$(OBJECTS): $(CASORT_LIB)
 
 # Link object files into the executable
 $(TARGET): $(OBJECTS)

@@ -119,20 +119,20 @@ int main(int argc, char* argv[])
         }
 
         // CeBr Energy Calibration functions
-        constexpr size_t kCebrchl = 11;
+        constexpr size_t kCebrchl = 11; 
         const std::array<std::string, kCebrchl> ceBrCalibrationFiles = 
         {
-            "B1E1.cal_params.txt", //Hard coded, because I was a little confused on how to work with the crystal structure
-            "C1E1.cal_params.txt",
-            "D1E1.cal_params.txt",
-            "F1E1.cal_params.txt",
-            "G1E1.cal_params.txt",
-            "H1E1.cal_params.txt",
-            "J1E1.cal_params.txt",
-            "K1E1.cal_params.txt",
-            "L1E1.cal_params.txt",
-            "O1E1.cal_params.txt",
-            "R1E1.cal_params.txt",
+            "B.cal_params.txt", //Hard coded, because I was a little confused 
+            "C.cal_params.txt", // on how to work with the crystal structure
+            "D.cal_params.txt",
+            "F.cal_params.txt",
+            "G.cal_params.txt",
+            "H.cal_params.txt",
+            "BJ.cal_params.txt",
+            "K.cal_params.txt",
+            "BL.cal_params.txt",
+            "O.cal_params.txt",
+            "BK.cal_params.txt",
         };
 
         ceECalibrate.resize(kCebrchl);
@@ -145,7 +145,7 @@ int main(int argc, char* argv[])
 
         try 
         {
-            ceGainMatch = funcsGainMatch.at(2);
+            ceGainMatch = funcsGainMatch.at(3); //Comment this out most likely
             if (ceGainMatch.size() < kCebrchl)
             {
                 ceGainMatch.resize(kCebrchl, [](double x) { return x; });
@@ -266,7 +266,7 @@ int main(int argc, char* argv[])
         std::array<std::shared_ptr<TH2D>, 6> b1_xtk{}, b2_xtk{}, b3_xtk{}, b5_xtk{};
 
         // CeBr thread-local histogram pointers
-        std::shared_ptr<TH2D> ce_inl, ce_ins, ce_cht, ce_trt;
+        std::shared_ptr<TH2D> ce_inl, ce_ins, ce_cht, ce_trt, ce_chE;
         std::shared_ptr<TH1D> ce_mdt;
 
         if (isRaw)
@@ -302,8 +302,7 @@ int main(int argc, char* argv[])
             //CeBr addition 
 
             ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
-            ce_sum = Histograms::ce_sum->GetThreadLocalPtr();
-            ce_abE = Histograms::ce_abE->GetThreadLocalPtr();
+            ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
         }
         if (isXtcorr)
         {
@@ -392,11 +391,15 @@ int main(int argc, char* argv[])
                             cb_sum->Fill(energy, det);
                         }
 
-
-
+                        if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
+                        {
+                            double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
+                            double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
+                            ce_chE->Fill(energy, ch); // Calibrated energy histograms
+                            ce_cht->Fill(cht, ch);
+                        }
+                            
                     }
-
-                    
                 } // End Crystal Loop
 
                 // Clover Cross Add-Back
@@ -430,26 +433,8 @@ int main(int argc, char* argv[])
                     auto energy_ab_corr = CAAddBack::GetAddBackEnergy(energies_corr, cb_xtal_T);
                     cb_abE->Fill(energy_ab_corr, det);
                 }
-                //Coincidence Loop
-
-
 
             } // End Detector Loop
-
-            //Cebr Loop Calibrated
-                if (isCal)
-                {
-                    for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
-                    {
-                        if(!std::isnan(ce_inL_val[ceCh]) && !std::isnan(ce_cht_val[ceCh]))
-                        {
-                            double energy = ceECalibrate[ceCh](ceGainMatch[ceCh](ce_inL_val[ceCh]));
-                            double cht = ce_cht_val[ceCh] * Histograms::kNsPerBin;
-                            ce_chE->Fill(energy, ceCh);
-                        }
-                    }
-
-                }
 
             processedEntries++;
         } // End Event Loop
@@ -548,7 +533,8 @@ int main(int argc, char* argv[])
     }
     if (args.mode == "cal" || args.mode == "xtcorr") //Writing for Calibrated CeBr
     { 
-        Histograms::ce_chE->Write(); 
+        Histograms::ce_chE->Write();
+        Histograms::ce_cht->Write(); 
     }
     outfile->cd();
 

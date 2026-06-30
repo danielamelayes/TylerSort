@@ -112,7 +112,7 @@ inline void Initialize(const std::string& mode)
         ce_ins = std::make_unique<TCAHistogram<TH2D>>(
             "ce_ins", "CeBr Integration Short (Raw Data);ADC;Channel;Counts/Bin", kDigitizerBins, 0, kDigitizerBins,
             kDigitizerChannels, 0, kDigitizerChannels);
-        ce_cht = std::make_unique<TCAHistogram<TH2D>>("ce_cht", "CeBr Channel Time (Raw Data);ADC;Channel;Counts/Bin",
+        ce_cht = std::make_unique<TCAHistogram<TH2D>>("ce_cht", "CeBr Channel Time;Time(ns);Channel;Counts/Bin",
                                                       kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, kDigitizerChannels,
                                                       0, kDigitizerChannels);
         ce_mdt = std::make_unique<TCAHistogram<TH1D>>("ce_mdt", "CeBr Module Time;Time (ns);Counts/Bin", kDigitizerBins,
@@ -145,6 +145,7 @@ inline void Initialize(const std::string& mode)
         ce_chE = std::make_unique<TCAHistogram<TH2D>>("ce_chE", "CeBr Energy;Energy (keV);Channel;Counts/Bin",
                                                       kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0,
                                                       kDigitizerChannels);
+    //    ce_chtE = std::make_unique<TCAHistogram<TH2D>>("ce_chtE", "CeBr Time;Time (ns);Channel;Counts/Bin", )
 
     } else if (mode == "xtcorr")
     {
