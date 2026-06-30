@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
         constexpr size_t kCebrchl = 11;
         const std::array<std::string, kCebrchl> ceBrCalibrationFiles = 
         {
-            "B1E1.cal_params.txt",
+            "B1E1.cal_params.txt", //Hard coded, because I was a little confused on how to work with the crystal structure
             "C1E1.cal_params.txt",
             "D1E1.cal_params.txt",
             "F1E1.cal_params.txt",
@@ -436,7 +436,7 @@ int main(int argc, char* argv[])
 
             } // End Detector Loop
 
-            //Cebr Loop
+            //Cebr Loop Calibrated
                 if (isCal)
                 {
                     for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
@@ -546,7 +546,7 @@ int main(int argc, char* argv[])
         Histograms::ce_trt->Write();
         Histograms::ce_mdt->Write();
     }
-    if (args.mode == "cal" || args.mode == "xtcorr") 
+    if (args.mode == "cal" || args.mode == "xtcorr") //Writing for Calibrated CeBr
     { 
         Histograms::ce_chE->Write(); 
     }
