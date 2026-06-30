@@ -1,6 +1,7 @@
 /* #region Includes */
 
 // C++ Includes
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -117,30 +118,44 @@ int main(int argc, char* argv[])
             cbGainMatch = std::vector<std::function<double(double)>>(16, [](double x) { return x; });
         }
 
-        std::vector<char> prefixes = {'B', 'C', 'D', 'F', 'G', 'H','J', 'K','L', 'O', 'R'};
-
-        for (char prefix: prefixes)
+        // CeBr Energy Calibration functions
+        constexpr size_t kCebrchl = 11;
+        const std::array<std::string, kCebrchl> ceBrCalibrationFiles = 
         {
-            for (int det: {1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 13})
-            {
-                for ( int xtal = 1; xtal <= 4; xtal++)
-                {
-                    std::string calFileName = Form("%s/%c%iE1.cal_params.txt", args.calibrationDir.c_str(), prefix, det, xtal);
-                    ceECalibrate.push_back(CACalibration::MakeCalibration(calFileName));
-                }
+            "B1E1.cal_params.txt",
+            "C1E1.cal_params.txt",
+            "D1E1.cal_params.txt",
+            "F1E1.cal_params.txt",
+            "G1E1.cal_params.txt",
+            "H1E1.cal_params.txt",
+            "J1E1.cal_params.txt",
+            "K1E1.cal_params.txt",
+            "L1E1.cal_params.txt",
+            "O1E1.cal_params.txt",
+            "R1E1.cal_params.txt",
+        };
 
-            }
+        ceECalibrate.resize(kCebrchl);
 
+        for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
+        {
+            std::string calFileName = Form("%s/%s", args.calibrationDir.c_str(), ceBrCalibrationFiles[ceCh].c_str());
+            ceECalibrate[ceCh] = CACalibration::MakeCalibration(calFileName);
         }
+
         try 
         {
-            ceGainMatch =. funcsGainMatch.at(2);
-            printf("[INFO] CeBr Energy Calibration functions retricved \n");
+            ceGainMatch = funcsGainMatch.at(2);
+            if (ceGainMatch.size() < kCebrchl)
+            {
+                ceGainMatch.resize(kCebrchl, [](double x) { return x; });
+            }
+            printf("[INFO] CeBr Energy Gain Match functions retrieved\n");
         }
         catch(const std::exception& e)
         {
-            printf("[WARN] Energy Calibration functions not found, not proceeding with energy calibration\n");
-            ceGainMatch = std::vector<std::function<double(double)>>(16, [](double x){return x; });
+            printf("[WARN] CeBr Energy Gain Match functions not found, proceeding without gain matching\n");
+            ceGainMatch = std::vector<std::function<double(double)>>(kCebrchl, [](double x){return x; });
         }
     }
 
@@ -377,14 +392,8 @@ int main(int argc, char* argv[])
                             cb_sum->Fill(energy, det);
                         }
 
-                        // CeBr Calibration
-                        if (!std::isnan(ce_inl_val[ch]) && !std::isnan(ce_cht_val[ch]))
-                        {
-                            double energy   = ceECalibrate[ch](ceGainMatch[ch](ce_inl_val[ch]));
-                            double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
-                            ce_chE->Fill(energy, ch);
-                            ce_sum->Fill(energy, det);
-                        }
+
+
                     }
 
                     
@@ -426,6 +435,21 @@ int main(int argc, char* argv[])
 
 
             } // End Detector Loop
+
+            //Cebr Loop
+                if (isCal)
+                {
+                    for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
+                    {
+                        if(!std::isnan(ce_inL_val[ceCh]) && !std::isnan(ce_cht_val[ceCh]))
+                        {
+                            double energy = ceECalibrate[ceCh](ceGainMatch[ceCh](ce_inL_val[ceCh]));
+                            double cht = ce_cht_val[ceCh] * Histograms::kNsPerBin;
+                            ce_chE->Fill(energy, ceCh);
+                        }
+                    }
+
+                }
 
             processedEntries++;
         } // End Event Loop
@@ -522,7 +546,10 @@ int main(int argc, char* argv[])
         Histograms::ce_trt->Write();
         Histograms::ce_mdt->Write();
     }
-    if (args.mode == "cal" || args.mode == "xtcorr") { Histograms::ce_chE->Write(); }
+    if (args.mode == "cal" || args.mode == "xtcorr") 
+    { 
+        Histograms::ce_chE->Write(); 
+    }
     outfile->cd();
 
     /* #endregion */
