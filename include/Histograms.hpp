@@ -24,6 +24,7 @@ inline constexpr double       kXTalkEnergyPerBin = 5.0;       // Coarser binning
 inline constexpr double       kNsPerBin          = 0.098;     // Conversion factor from bin to nanoseconds
 inline constexpr unsigned int kDigitizerBins     = 1u << 16u; // Number of bins in the digitizer (16-bit)
 inline constexpr unsigned int kDigitizerChannels = 16u;       // Number of channels in digitizer
+inline constexpr unsigned int kCebrchl = 11; //number of channels for CeBr
 
 // --- Raw histograms (mode == "raw") ---
 // Clover Cross
