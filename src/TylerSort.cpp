@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
             cb_abE = Histograms::cb_abE->GetThreadLocalPtr();
 
             //CeBr addition
-            ce_chE = Histograms::ce_chE->GetPtr();
+            ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
             ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
         }
         if (isXtcorr)
