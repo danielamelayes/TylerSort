@@ -240,14 +240,14 @@ int main(int argc, char* argv[])
 #endif // PROCESS_POS_SIG
 
         
-#if CEBR ALL        
+      
         // CEBR All
         TTreeReaderArray<double> ce_inL_val(eventReader, "cebr_all.integration_long");
         TTreeReaderArray<double> ce_cht_val(eventReader, "cebr_all.channel_time");
         TTreeReaderArray<double> ce_mdt_val(eventReader, "cebr_all.module_timestamp");
         TTreeReaderArray<double> ce_ins_val(eventReader, "cebr_all.integration_short");
         TTreeReaderArray<double> ce_trt_val(eventReader, "cebr_all.trigger_time");
-#endif //CEBR ALL
+
         /* #endregion */
 
         /* #region Get Histogram pointers*/
