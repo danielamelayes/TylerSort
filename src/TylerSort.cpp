@@ -160,8 +160,8 @@ int main(int argc, char* argv[])
             ceGainMatch = std::vector<std::function<double(double)>>(kCebrchl, [](double x){return x; });
         }
     }
-    printf("[DEBUG] Aborting just to check");
-    abort();
+    //printf("[DEBUG] Aborting just to check");
+    //abort();
     /* #endregion Calibration Setup */
 
     /* #region Event Loop Setup*/
@@ -239,13 +239,15 @@ int main(int argc, char* argv[])
         TTreeReaderArray<double> ps_trt_val(eventReader, "pos_sig.trigger_time");
 #endif // PROCESS_POS_SIG
 
+        
+#if CEBR ALL        
         // CEBR All
         TTreeReaderArray<double> ce_inL_val(eventReader, "cebr_all.integration_long");
         TTreeReaderArray<double> ce_cht_val(eventReader, "cebr_all.channel_time");
         TTreeReaderArray<double> ce_mdt_val(eventReader, "cebr_all.module_timestamp");
         TTreeReaderArray<double> ce_ins_val(eventReader, "cebr_all.integration_short");
         TTreeReaderArray<double> ce_trt_val(eventReader, "cebr_all.trigger_time");
-
+#endif //CEBR ALL
         /* #endregion */
 
         /* #region Get Histogram pointers*/
