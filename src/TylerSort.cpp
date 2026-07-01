@@ -290,10 +290,10 @@ int main(int argc, char* argv[])
             cb_trt = Histograms::cb_trt->GetThreadLocalPtr();
             // CeBr Detectors
             ce_inl = Histograms::ce_inl->GetThreadLocalPtr();
-            ce_ins = Histograms::ce_ins->GetThreadLocalPtr();
+            ce_ins = Histograms::ce_ins->GetThreadLocalPtr(); //Was GetThreadLocalPtr()
             ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
-            ce_mdt = Histograms::ce_mdt->GetThreadLocalPtr();
-            ce_trt = Histograms::ce_trt->GetThreadLocalPtr();
+            ce_mdt = Histograms::ce_mdt->GetPtr();
+            ce_trt = Histograms::ce_trt->GetPtr();
         }
         if (isCal)
         {
