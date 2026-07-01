@@ -143,8 +143,8 @@ inline void Initialize(const std::string& mode)
             kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
         // CeBr Detectors
         ce_chE = std::make_unique<TCAHistogram<TH2D>>("ce_chE", "CeBr Energy;Energy (keV);Channel;Counts/Bin",
-                                                      kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0,
-                                                      kDigitizerChannels);
+                                                      kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kCebrchl, 0,
+                                                      kCebrchl);
     //    ce_chtE = std::make_unique<TCAHistogram<TH2D>>("ce_chtE", "CeBr Time;Time (ns);Channel;Counts/Bin", )
 
     } else if (mode == "xtcorr")
