@@ -396,7 +396,7 @@ int main(int argc, char* argv[])
                             double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
                             double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
                             ce_chE->Fill(energy, ch); // Calibrated energy histograms
-                            ce_cht->Fill(cht, ch);
+                            //ce_cht->Fill(cht, ch);
                         }
                             
                     }
@@ -534,7 +534,7 @@ int main(int argc, char* argv[])
     if (args.mode == "cal" || args.mode == "xtcorr") //Writing for Calibrated CeBr
     { 
         Histograms::ce_chE->Write();
-        Histograms::ce_cht->Write(); 
+       // Histograms::ce_cht->Write(); 
     }
     outfile->cd();
 
