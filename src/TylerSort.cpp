@@ -140,12 +140,14 @@ int main(int argc, char* argv[])
         for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
         {
             std::string calFileName = Form("%s/%s", args.calibrationDir.c_str(), ceBrCalibrationFiles[ceCh].c_str());
+            printf("[DEBUG] Loading Cebr Calibration Files from: %s\n", calFileName.c_str()); //more debug
             ceECalibrate[ceCh] = CACalibration::MakeCalibration(calFileName);
         }
 
         try 
         {
-            ceGainMatch = funcsGainMatch.at(3); //Comment this out most likely
+            printf("[CEBR CAL] Loading CeBr gain match from funcsGainMatch[3]\n"); // more debug 
+            ceGainMatch = funcsGainMatch.at(3); 
             if (ceGainMatch.size() < kCebrchl)
             {
                 ceGainMatch.resize(kCebrchl, [](double x) { return x; });
