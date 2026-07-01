@@ -300,6 +300,10 @@ int main(int argc, char* argv[])
             cb_abE = Histograms::cb_abE->GetThreadLocalPtr();
 
             //CeBr addition 
+            printf("[DEBUG] Histograms::ce_chE ptr = %p\n", Histograms::ce_chE.get()); //stupid debugs
+            printf("[DEBUG] ce_chE local ptr = %p\n", ce_chE.get());
+            printf("[DEBUG] ch = %zu\n", ch);
+
 
             ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
             ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
