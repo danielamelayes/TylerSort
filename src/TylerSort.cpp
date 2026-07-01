@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
     auto args = CAUtilities::ParseArguments(argc, argv);
 
     // Configure ROOT threading from CLI before creating threaded histograms.
-   //: if (!ROOT::IsImplicitMTEnabled()) ROOT::EnableImplicitMT(args.threadCount);
+    if (!ROOT::IsImplicitMTEnabled()) ROOT::EnableImplicitMT(args.threadCount);
     ROOT::EnableThreadSafety();
 
     std::cout << "=============== Welcome to TylerSort! ==================" << std::endl;
