@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
         {
             printf("[WARN] Crosstalk correction functions not found, proceeding without crosstalk correction\n");
             xTalkCorrection = std::vector<std::function<std::array<double, 4>(std::array<double, 4>)>>(
-                4, [](std::array<double, 4> x) { return x; });
+                8, [](std::array<double, 4> x) { return x; });
         }
 
         // Calibration functions
