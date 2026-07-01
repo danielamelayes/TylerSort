@@ -160,7 +160,8 @@ int main(int argc, char* argv[])
             ceGainMatch = std::vector<std::function<double(double)>>(kCebrchl, [](double x){return x; });
         }
     }
-
+    printf("[DEBUG] Aborting just to check");
+    abort();
     /* #endregion Calibration Setup */
 
     /* #region Event Loop Setup*/
