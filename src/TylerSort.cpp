@@ -290,10 +290,10 @@ int main(int argc, char* argv[])
             cb_trt = Histograms::cb_trt->GetThreadLocalPtr();
             // CeBr Detectors
             ce_inl = Histograms::ce_inl->GetThreadLocalPtr();
-            ce_ins = Histograms::ce_ins->GetThreadLocalPtr(); //Was GetThreadLocalPtr()
+            ce_ins = Histograms::ce_ins->GetThreadLocalPtr();
             ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
-            ce_mdt = Histograms::ce_mdt->GetPtr();
-            ce_trt = Histograms::ce_trt->GetPtr();
+            ce_mdt = Histograms::ce_mdt->GetThreadLocalPtr();
+            ce_trt = Histograms::ce_trt->GetThreadLocalPtr();
         }
         if (isCal)
         {
@@ -305,8 +305,8 @@ int main(int argc, char* argv[])
             cb_abE = Histograms::cb_abE->GetThreadLocalPtr();
 
             //CeBr addition
-            ce_chE = Histograms::ce_chE->GetPtr();
-            ce_cht = Histograms::ce_cht->GetPtr();
+            ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
+            ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
         }
         if (isXtcorr)
         {
@@ -356,10 +356,6 @@ int main(int argc, char* argv[])
                 {
                     auto ch = det * 4 + xtal; // Channel number 0-15
 
-                    printf("[DEBUG] Histograms::ce_chE ptr = %p\n", Histograms::ce_chE.get()); //stupid debugs
-                    printf("[DEBUG] ce_chE local ptr = %p\n", ce_chE.get());
-                    printf("[DEBUG] ch = %zu\n", ch);
-
                     if (isRaw)
                     {
                         // Clover Cross
@@ -399,13 +395,13 @@ int main(int argc, char* argv[])
                             cb_sum->Fill(energy, det);
                         }
 
-                        if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
+                        /*if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
                         {
                             double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
                             double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
                             ce_chE->Fill(energy, ch); // Calibrated energy histograms
                             //ce_cht->Fill(cht, ch);
-                        }
+                        }*/
                             
                     }
                 } // End Crystal Loop
