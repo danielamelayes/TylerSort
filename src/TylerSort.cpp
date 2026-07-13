@@ -18,6 +18,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH3D.h>
 #include <TSpline.h>
 #include <TStopwatch.h>
 #include <TTree.h>
@@ -119,8 +120,7 @@ int main(int argc, char* argv[])
         }
 
         // CeBr Energy Calibration functions
-        constexpr size_t kCebrchl = 11; 
-        const std::array<std::string, kCebrchl> ceBrCalibrationFiles = 
+        const std::array<std::string, Histograms::kDigitizerChannels> ceBrCalibrationFiles = 
         {
             "B.cal_params.txt", //Hard coded, because I was a little confused 
             "C.cal_params.txt", // on how to work with the crystal structure
@@ -132,32 +132,39 @@ int main(int argc, char* argv[])
             "K.cal_params.txt",
             "BL.cal_params.txt",
             "O.cal_params.txt",
-            "BK.cal_params.txt",
+            "BK.cal_params.txt",   
         };
 
-        ceECalibrate.resize(kCebrchl);
+        ceECalibrate.resize(Histograms::kDigitizerChannels);
 
-        for (size_t ceCh = 0; ceCh < kCebrchl; ++ceCh)
+        for (size_t ceCh = 0; ceCh < Histograms::kDigitizerChannels; ++ceCh)
         {
-            std::string calFileName = Form("%s/%s", args.calibrationDir.c_str(), ceBrCalibrationFiles[ceCh].c_str());
-            printf("[DEBUG] Loading Cebr Calibration Files from: %s\n", calFileName.c_str()); //more debug
-            ceECalibrate[ceCh] = CACalibration::MakeCalibration(calFileName);
+            try
+            {
+                std::string calFileName = Form("%s/%s", args.calibrationDir.c_str(), ceBrCalibrationFiles[ceCh].c_str());
+                printf("[DEBUG] Loading Cebr Calibration Files from: %s\n", calFileName.c_str()); //more debug
+                ceECalibrate[ceCh] = CACalibration::MakeCalibration(calFileName);
+            }
+            catch (const std::exception& e)
+            {
+                printf("[WARN] Failed to load CeBr calibration for channel %zu: %s\n", ceCh, e.what());
+            }
         }
 
         try 
         {
-            printf("[CEBR CAL] Loading CeBr gain match from funcsGainMatch[3]\n"); // more debug 
+            printf("[INFO] Loading CeBr gain match from funcsGainMatch[3]\n"); // more debug 
             ceGainMatch = funcsGainMatch.at(3); 
-            if (ceGainMatch.size() < kCebrchl)
+            if (ceGainMatch.size() < Histograms::kDigitizerChannels)
             {
-                ceGainMatch.resize(kCebrchl, [](double x) { return x; });
+                ceGainMatch.resize(Histograms::kDigitizerChannels, [](double x) { return x; });
             }
             printf("[INFO] CeBr Energy Gain Match functions retrieved\n");
         }
         catch(const std::exception& e)
         {
             printf("[WARN] CeBr Energy Gain Match functions not found, proceeding without gain matching\n");
-            ceGainMatch = std::vector<std::function<double(double)>>(kCebrchl, [](double x){return x; });
+            ceGainMatch = std::vector<std::function<double(double)>>(Histograms::kDigitizerChannels, [](double x){return x; });
         }
     }
     //printf("[DEBUG] Aborting just to check");
@@ -271,8 +278,9 @@ int main(int argc, char* argv[])
         std::array<std::shared_ptr<TH2D>, 6> b1_xtk{}, b2_xtk{}, b3_xtk{}, b5_xtk{};
 
         // CeBr thread-local histogram pointers
-        std::shared_ptr<TH2D> ce_inl, ce_ins, ce_cht, ce_trt, ce_chE;
+        std::shared_ptr<TH2D> ce_inl, ce_ins, ce_cht, ce_trt, ce_chE, ce_coE;
         std::shared_ptr<TH1D> ce_mdt;
+        std::shared_ptr<TH3D> CeBr3d;
 
         if (isRaw)
         {
@@ -305,10 +313,17 @@ int main(int argc, char* argv[])
             cb_abE = Histograms::cb_abE->GetThreadLocalPtr();
 
             //CeBr addition
-            ce_chE = Histograms::ce_chE->GetThreadLocalPtr();
-            ce_cht = Histograms::ce_cht->GetThreadLocalPtr();
+            ce_chE = Histograms::ce_chE->GetThreadLocalPtr(); //Calibrated Energy
+            ce_cht = Histograms::ce_cht->GetThreadLocalPtr(); //Channel Time
+            ce_mdt = Histograms::ce_mdt->GetThreadLocalPtr(); //Module Time 
+            //ce_smt = Histograms::ce_smt->GetThreadLocalPtr(); //Time walk 
+            ce_coE = Histograms::ce_coE->GetThreadLocalPtr(); //2d Coincidence histograms
+            CeBr3d = Histograms::CeBr3d->GetThreadLocalPtr(); // 3d histogram
+
+
         }
         if (isXtcorr)
+        
         {
             cc_abM = Histograms::cc_abM->GetThreadLocalPtr();
             for (int i = 0; i < 6; i++) c1_xtk[i] = Histograms::c1_xtk[i]->GetThreadLocalPtr();
@@ -330,6 +345,12 @@ int main(int argc, char* argv[])
         // Loop over the entries in the tree
         while (eventReader.Next())
         {
+            
+            std::array<double, Histograms::kDigitizerChannels> ce_event_E; //arrays to store energy by events and time 
+            std::array<double, Histograms::kDigitizerChannels> ce_event_T;
+            ce_event_E.fill(NAN);
+            ce_event_T.fill(NAN);
+            
             if (isRaw)
             {
                 // Module Time
@@ -366,10 +387,19 @@ int main(int argc, char* argv[])
                         cb_amp->Fill(cb_amp_val[ch], ch);
                         cb_cht->Fill(cb_cht_val[ch] * Histograms::kNsPerBin, ch);
                         // cb_plu->Fill(cb_plu_val[ch], ch);
-                        //  CeBr Detectors
-                        ce_inl->Fill(ce_inL_val[ch], ch);
-                        ce_ins->Fill(ce_ins_val[ch], ch);
-                        ce_cht->Fill(ce_cht_val[ch] * Histograms::kNsPerBin, ch);
+                        //  CeBr Detectors (guard against fewer CeBr channels in the tree) //done with Copilot, probably useless
+                        if (static_cast<size_t>(ce_inL_val.GetSize()) > ch)
+                        {
+                            ce_inl->Fill(ce_inL_val[ch], ch);
+                        }
+                        if (static_cast<size_t>(ce_ins_val.GetSize()) > ch)
+                        {
+                            ce_ins->Fill(ce_ins_val[ch], ch);
+                        }
+                        if (static_cast<size_t>(ce_cht_val.GetSize()) > ch)
+                        {
+                            ce_cht->Fill(ce_cht_val[ch] * Histograms::kNsPerBin, ch);
+                        }
                     }
 
                     if (isCal) {
@@ -395,13 +425,16 @@ int main(int argc, char* argv[])
                             cb_sum->Fill(energy, det);
                         }
 
-                        /*if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
-                        {
+                        if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
+                        {  
                             double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
                             double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
                             ce_chE->Fill(energy, ch); // Calibrated energy histograms
-                            //ce_cht->Fill(cht, ch);
-                        }*/
+                            ce_cht->Fill(cht, ch); //Channel Times 
+                            // ce_tw->Fill(energy, cht); // 2D Time-Walk Histogram
+                            ce_event_E[ch] = energy;
+                            ce_event_T[ch] = cht; 
+                        }
                             
                     }
                 } // End Crystal Loop
@@ -439,6 +472,23 @@ int main(int argc, char* argv[])
                 }
 
             } // End Detector Loop
+
+            const double energyThreshold = 50.0;
+            for (int i = 1; i < 13; ++i)
+            {
+                for (int j = i + 1; j < 13; ++j)
+                {
+                    if (!std::isnan(ce_event_E[i]) && !std::isnan(ce_event_E[j]) && ce_event_E[i] > energyThreshold &&
+                        ce_event_E[j] > energyThreshold && std::fabs(ce_event_T[i] - ce_event_T[j]) < 40.0)
+                    {
+                        CeBr3d->Fill(ce_event_E[i], ce_event_E[j], ce_event_T[i] - ce_event_T[j]);
+                        CeBr3d->Fill(ce_event_E[i], ce_event_E[j], ce_event_T[j]-ce_event_T[i]); //symmetry fill
+
+                       // ce_smt->Fill(ce_event_E[i], (ce_event_T[i] - ce_event_T[j])); //random thing
+                        
+                    }
+                }
+            }
 
             processedEntries++;
         } // End Event Loop
@@ -538,7 +588,9 @@ int main(int argc, char* argv[])
     if (args.mode == "cal" || args.mode == "xtcorr") //Writing for Calibrated CeBr
     { 
         Histograms::ce_chE->Write();
-       // Histograms::ce_cht->Write(); 
+        Histograms::ce_cht->Write();
+        Histograms::CeBr3d->Write();
+        Histograms::ce_coE->Write(); 
     }
     outfile->cd();
 

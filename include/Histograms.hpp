@@ -10,6 +10,7 @@
 #include <ROOT/TThreadedObject.hxx>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH3D.h>
 
 // Project Includes
 #include "CASort/TCAHistogram.hpp"
@@ -24,7 +25,7 @@ inline constexpr double       kXTalkEnergyPerBin = 5.0;       // Coarser binning
 inline constexpr double       kNsPerBin          = 0.098;     // Conversion factor from bin to nanoseconds
 inline constexpr unsigned int kDigitizerBins     = 1u << 16u; // Number of bins in the digitizer (16-bit)
 inline constexpr unsigned int kDigitizerChannels = 16u;       // Number of channels in digitizer
-inline constexpr unsigned int kCebrchl = 11; //number of channels for CeBr
+inline constexpr unsigned int kCebrchl = 16; //number of channels for CeBr
 
 // --- Raw histograms (mode == "raw") ---
 // Clover Cross
@@ -57,6 +58,10 @@ inline std::unique_ptr<TCAHistogram<TH2D>> cb_sum;
 inline std::unique_ptr<TCAHistogram<TH2D>> cb_abE;
 // CeBr Detectors
 inline std::unique_ptr<TCAHistogram<TH2D>> ce_chE;
+inline std::unique_ptr<TCAHistogram<TH3D>> CeBr3d;
+inline std::unique_ptr<TCAHistogram<TH2D>> ce_coE; 
+inline std::unique_ptr<TCAHistogram<TH2D>> ce_wlk; 
+
 
 // --- Cross-talk correction histograms (mode == "xtcorr") ---
 // Clover Cross
@@ -144,9 +149,19 @@ inline void Initialize(const std::string& mode)
             kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels / 4, 0, kDigitizerChannels / 4);
         // CeBr Detectors
         ce_chE = std::make_unique<TCAHistogram<TH2D>>("ce_chE", "CeBr Energy;Energy (keV);Channel;Counts/Bin",
-                                                      kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kCebrchl, 0,
-                                                      kCebrchl);
-    //    ce_chtE = std::make_unique<TCAHistogram<TH2D>>("ce_chtE", "CeBr Time;Time (ns);Channel;Counts/Bin", )
+                                                      kMaxEnergy / kEnergyPerBin, 0, kMaxEnergy, kDigitizerChannels, 0,
+                                                      kDigitizerChannels);
+        ce_cht = std::make_unique<TCAHistogram<TH2D>>("ce_cht", "CeBr Channel Time;Time(ns);Channel;Counts/Bin",
+                                                      kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, kDigitizerChannels,
+                                                      0, kDigitizerChannels);
+        ce_wlk = std::make_unique<TCAHistogram<TH2D>>("ce_wlk", "CeBr Time Walk;Time(ns);Channel;Counts/Bin", kDigitizerBins, 0, //Time Walk Histogram
+                                                        (kDigitizerBins)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+        //ce_wlkVGe = std::make_unique<TCAHistogram<TH2D>>("ce_wlkVGe", "CeBr energy vs dt;Time(ns);Channel;Counts/Bin", kDigitizerChannels, 0, (kDigitizerChannels)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+        ce_coE = std::make_unique<TCAHistogram<TH2D>>("ce_coE", "CeBr (True+Accidental);Time(ns);Channel:Counts/Bin", kDigitizerChannels, 
+            0, (kDigitizerChannels)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+        
+        CeBr3d = std::make_unique<TCAHistogram<TH3D>>("cebr_3d", "3D Coincidence;E1 (keV);E2 (keV);dt (ns)", 500, 0, 5000,
+                                   500, 0, 5000, 400, -200, 200);
 
     } else if (mode == "xtcorr")
     {
