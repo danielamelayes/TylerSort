@@ -128,11 +128,11 @@ int main(int argc, char* argv[])
             "F.cal_params.txt",
             "G.cal_params.txt",
             "H.cal_params.txt",
-            "BJ.cal_params.txt",
             "K.cal_params.txt",
-            "BL.cal_params.txt",
             "O.cal_params.txt",
-            "BK.cal_params.txt",   
+            "BJ.cal_params.txt",
+            "BK.cal_params.txt",
+            "BL.cal_params.txt", 
         };
 
         ceECalibrate.resize(Histograms::kDigitizerChannels);
@@ -153,8 +153,8 @@ int main(int argc, char* argv[])
 
         try 
         {
-            printf("[INFO] Loading CeBr gain match from funcsGainMatch[3]\n"); // more debug 
-            ceGainMatch = funcsGainMatch.at(3); 
+            printf("[INFO] Loading CeBr gain match from funcsGainMatch[2]\n"); // more debug 
+            ceGainMatch = funcsGainMatch.at(2); 
             if (ceGainMatch.size() < Histograms::kDigitizerChannels)
             {
                 ceGainMatch.resize(Histograms::kDigitizerChannels, [](double x) { return x; });
@@ -165,6 +165,12 @@ int main(int argc, char* argv[])
         {
             printf("[WARN] CeBr Energy Gain Match functions not found, proceeding without gain matching\n");
             ceGainMatch = std::vector<std::function<double(double)>>(Histograms::kDigitizerChannels, [](double x){return x; });
+        }
+        for (size_t ch = 0; ch < 11; ch++)
+        {
+            double testADC = 1000.0;
+            printf("[SANITY] ch %zu: gainmatch(%.1f)=%.3f -> ecalib=%.3f\n",
+                   ch, testADC, ceGainMatch[ch](testADC), ceECalibrate[ch](ceGainMatch[ch](testADC)));
         }
     }
     //printf("[DEBUG] Aborting just to check");
@@ -315,7 +321,6 @@ int main(int argc, char* argv[])
             //CeBr addition
             ce_chE = Histograms::ce_chE->GetThreadLocalPtr(); //Calibrated Energy
             ce_cht = Histograms::ce_cht->GetThreadLocalPtr(); //Channel Time
-            ce_mdt = Histograms::ce_mdt->GetThreadLocalPtr(); //Module Time 
             //ce_smt = Histograms::ce_smt->GetThreadLocalPtr(); //Time walk 
             ce_coE = Histograms::ce_coE->GetThreadLocalPtr(); //2d Coincidence histograms
             CeBr3d = Histograms::CeBr3d->GetThreadLocalPtr(); // 3d histogram
@@ -427,7 +432,10 @@ int main(int argc, char* argv[])
 
                         if (!std::isnan(ce_inL_val[ch]) && !std::isnan(ce_cht_val[ch]) && ch < 11)
                         {  
+                            //double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
                             double energy = ceECalibrate[ch](ceGainMatch[ch](ce_inL_val[ch]));
+                            //double energy = ceGainMatch[ch](ce_inL_val[ch]);
+
                             double cht = ce_cht_val[ch] * Histograms::kNsPerBin;
                             ce_chE->Fill(energy, ch); // Calibrated energy histograms
                             ce_cht->Fill(cht, ch); //Channel Times 
@@ -474,9 +482,9 @@ int main(int argc, char* argv[])
             } // End Detector Loop
 
             const double energyThreshold = 50.0;
-            for (int i = 1; i < 13; ++i)
+            for (int i = 1; i < 12; ++i)
             {
-                for (int j = i + 1; j < 13; ++j)
+                for (int j = i + 1; j < 12; ++j)
                 {
                     if (!std::isnan(ce_event_E[i]) && !std::isnan(ce_event_E[j]) && ce_event_E[i] > energyThreshold &&
                         ce_event_E[j] > energyThreshold && std::fabs(ce_event_T[i] - ce_event_T[j]) < 40.0)

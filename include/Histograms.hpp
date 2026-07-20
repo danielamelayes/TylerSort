@@ -154,14 +154,16 @@ inline void Initialize(const std::string& mode)
         ce_cht = std::make_unique<TCAHistogram<TH2D>>("ce_cht", "CeBr Channel Time;Time(ns);Channel;Counts/Bin",
                                                       kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, kDigitizerChannels,
                                                       0, kDigitizerChannels);
-        ce_wlk = std::make_unique<TCAHistogram<TH2D>>("ce_wlk", "CeBr Time Walk;Time(ns);Channel;Counts/Bin", kDigitizerBins, 0, //Time Walk Histogram
-                                                        (kDigitizerBins)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+        //ce_wlk = std::make_unique<TCAHistogram<TH2D>>("ce_wlk", "CeBr Time Walk;Time(ns);Channel;Counts/Bin", kDigitizerBins, 0, //Time Walk Histogram
+        //                                               (kDigitizerBins)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
         //ce_wlkVGe = std::make_unique<TCAHistogram<TH2D>>("ce_wlkVGe", "CeBr energy vs dt;Time(ns);Channel;Counts/Bin", kDigitizerChannels, 0, (kDigitizerChannels)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
         ce_coE = std::make_unique<TCAHistogram<TH2D>>("ce_coE", "CeBr (True+Accidental);Time(ns);Channel:Counts/Bin", kDigitizerChannels, 
-            0, (kDigitizerChannels)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);
+            0, (kDigitizerChannels)*kNsPerBin, kDigitizerChannels, 0, kDigitizerChannels);        
         
         CeBr3d = std::make_unique<TCAHistogram<TH3D>>("cebr_3d", "3D Coincidence;E1 (keV);E2 (keV);dt (ns)", 500, 0, 5000,
                                    500, 0, 5000, 400, -200, 200);
+        ce_trt = std::make_unique<TCAHistogram<TH2D>>("ce_trt", "CeBr Trigger Time;Time (ns);Trigger ID;Counts/Bin",
+                                                      kDigitizerBins, 0, (kDigitizerBins)*kNsPerBin, 2, 0, 2);
 
     } else if (mode == "xtcorr")
     {
